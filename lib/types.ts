@@ -32,6 +32,7 @@ export type Doc = {
   status: DocStatus;
   notes: string;
   fromQuoteId?: string;
+  lastReminder?: string; // yyyy-mm-dd of the last payment reminder sent
   createdAt: string;
 };
 

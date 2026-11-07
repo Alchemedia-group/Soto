@@ -92,7 +92,8 @@ export function runAction(a: Action, getState: () => State): ActionResult {
       if (!STATUSES_BY_TYPE[d.type].includes(status))
         return { message: `${d.number} no puede estar en estado "${STATUS_LABEL[status]}".` };
       updateDoc(d.id, { status });
-      return { message: `${d.number} marcado como ${STATUS_LABEL[status].toLowerCase()}.`, path: `/documentos/${d.id}` };
+      const nudge = d.type === "quote" && status === "accepted" ? " ¿Quieres que la pase a factura?" : "";
+      return { message: `${d.number} marcado como ${STATUS_LABEL[status].toLowerCase()}.${nudge}`, path: `/documentos/${d.id}` };
     }
     case "convert_quote_to_invoice": {
       const d = findDoc(s, str(i.number));

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { fmtDate, money, totals } from "@/lib/format";
+import { addDays, fmtDate, money, totals } from "@/lib/format";
 import { DOC_LABEL } from "@/lib/types";
 
 export default function Imprimir() {
@@ -13,6 +13,8 @@ export default function Imprimir() {
   if (!d) return <div className="empty">Documento no encontrado.</div>;
   const c = clients.find((x) => x.id === d.clientId);
   const t = totals(d);
+  const isInvoice = d.type === "invoice";
+  const lines = (txt: (string | false | undefined)[]) => txt.filter(Boolean).join("\n");
 
   return (
     <div className="stack">
@@ -20,30 +22,40 @@ export default function Imprimir() {
         <Link className="btn" href={`/documentos/${d.id}`}>← Volver</Link>
         <button className="btn primary" onClick={() => window.print()}>Imprimir / Guardar PDF</button>
       </div>
+
       <div className="paper">
         <div className="row between" style={{ alignItems: "flex-start" }}>
-          <div>
-            <h1 style={{ margin: 0 }}>{s.companyName}</h1>
-            <div style={{ whiteSpace: "pre-line", fontSize: ".9rem" }}>
-              {[s.nif && `NIF: ${s.nif}`, s.address, s.phone, s.email].filter(Boolean).join("\n")}
-            </div>
+          <div className="doc-logo">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.jpg" alt={s.companyName} />
           </div>
-          <div className="right">
-            <h2 style={{ margin: 0, textTransform: "uppercase" }}>{DOC_LABEL[d.type]}</h2>
-            <div><strong>{d.number}</strong></div>
-            <div>Fecha: {fmtDate(d.date)}</div>
-            {d.type === "invoice" && d.dueDate && <div>Vencimiento: {fmtDate(d.dueDate)}</div>}
+          <div className="right" style={{ fontSize: ".85em" }}>
+            {lines([s.companyName, s.nif && `NIF ${s.nif}`, s.address, s.phone, s.email]).split("\n").map((l, i) => <div key={i}>{l}</div>)}
           </div>
         </div>
 
-        <div style={{ margin: "1.5rem 0", padding: ".8rem", background: "#f5f5f5", borderRadius: 6 }}>
-          <strong>{c?.name ?? "—"}</strong>
-          <div style={{ whiteSpace: "pre-line", fontSize: ".9rem" }}>
-            {[c?.nif && `NIF: ${c.nif}`, c?.address, c?.phone, c?.email].filter(Boolean).join("\n")}
+        <div className="doc-band" style={{ margin: "1.2rem 0" }}>
+          <span>{DOC_LABEL[d.type].toUpperCase()}</span>
+          <span>{d.number}</span>
+        </div>
+
+        <div className="row" style={{ alignItems: "stretch", gap: "1rem", flexWrap: "wrap" }}>
+          <div className="box grow" style={{ minWidth: 220 }}>
+            <div className="lbl">Cliente</div>
+            <strong>{c?.name ?? "—"}</strong>
+            <div style={{ whiteSpace: "pre-line", fontSize: ".9em" }}>{lines([c?.nif && `NIF ${c.nif}`, c?.address, c?.phone, c?.email])}</div>
+          </div>
+          <div className="box" style={{ minWidth: 200 }}>
+            <div className="lbl">Fecha</div><div>{fmtDate(d.date)}</div>
+            {isInvoice ? (
+              <><div className="lbl" style={{ marginTop: ".5rem" }}>Vencimiento</div><div>{fmtDate(d.dueDate)}</div></>
+            ) : (
+              <><div className="lbl" style={{ marginTop: ".5rem" }}>Válido hasta</div><div>{fmtDate(addDays(d.date, 30))}</div></>
+            )}
           </div>
         </div>
 
-        <table>
+        <table style={{ marginTop: "1.2rem" }}>
           <thead><tr><th>Concepto</th><th className="r">Cant.</th><th className="r">Precio</th><th className="r">IVA</th><th className="r">Importe</th></tr></thead>
           <tbody>
             {d.lines.filter((l) => l.description || l.price).map((l) => (
@@ -62,9 +74,27 @@ export default function Imprimir() {
           <div className="big"><span>TOTAL</span><span>{money(t.total)}</span></div>
         </div>
 
-        {d.type === "invoice" && s.iban && <p style={{ marginTop: "1.5rem" }}><strong>Forma de pago:</strong> transferencia a {s.iban}</p>}
-        {d.notes && <p style={{ whiteSpace: "pre-line", marginTop: "1rem" }}>{d.notes}</p>}
-        {s.footer && <p style={{ marginTop: "2rem", fontSize: ".8rem", color: "#666", whiteSpace: "pre-line" }}>{s.footer}</p>}
+        {isInvoice ? (
+          <div className="box" style={{ marginTop: "1.5rem" }}>
+            <div className="lbl">Forma de pago</div>
+            {s.iban ? <div>Transferencia bancaria a <strong>{s.iban}</strong></div> : <div>Transferencia bancaria</div>}
+            <div style={{ fontSize: ".9em" }}>Indica el número de factura <strong>{d.number}</strong> en el concepto. Vencimiento: {fmtDate(d.dueDate)}.</div>
+          </div>
+        ) : (
+          <div className="row" style={{ gap: "1.5rem", marginTop: "1.5rem", alignItems: "flex-end", flexWrap: "wrap" }}>
+            <div className="grow" style={{ minWidth: 200, fontSize: ".85em" }}>
+              Presupuesto válido 30 días desde su fecha. Los precios no incluyen IVA salvo que se indique.
+            </div>
+            <div style={{ width: 260 }}>
+              <div className="sign" />
+              <div className="lbl" style={{ marginTop: ".3rem" }}>Aceptado por el cliente · firma y fecha</div>
+            </div>
+          </div>
+        )}
+
+        {d.notes && <p style={{ whiteSpace: "pre-line", marginTop: "1rem", fontSize: ".9em" }}>{d.notes}</p>}
+        {s.footer && <p style={{ marginTop: "1rem", fontSize: ".75em", color: "#666", whiteSpace: "pre-line" }}>{s.footer}</p>}
+        <div className="services">Fontanería · Clima · Electricidad · Fotovoltaica</div>
       </div>
     </div>
   );

@@ -16,7 +16,9 @@ npm run dev                  # http://localhost:3000
 - Clientes (ficha, historial de documentos), presupuestos y facturas con IVA por línea e IRPF opcional.
 - Numeración correlativa por año (`P-2026-0001`, `F-2026-0001`); las facturas emitidas no se pueden borrar.
 - Presupuesto → factura en un toque; estados; facturas vencidas; panel con pendiente de cobro.
-- PDF/Imprimir, y envío por WhatsApp / email.
+- PDF/Imprimir con diseño de marca (presupuesto con firma de aceptación, factura con datos de pago), y envío por WhatsApp / email.
+- Recordatorios de pago por email o WhatsApp (abren tu app de correo/WhatsApp con el texto preparado y guardan la fecha del último recordatorio). No se envían desde un servidor.
+- Presupuesto aceptado → "Crear factura" (banner en el presupuesto y en Inicio); la factura copia conceptos, IVA y cliente y queda enlazada.
 - Asistente de voz: dictado del navegador (es-ES) + Claude (`app/api/assistant`) que convierte la orden en acciones.
   Sin `ANTHROPIC_API_KEY` solo entiende órdenes simples ("abre facturas", "nuevo cliente Ana").
 - Instalable en el móvil (Añadir a pantalla de inicio).

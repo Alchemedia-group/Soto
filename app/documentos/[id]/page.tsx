@@ -5,8 +5,9 @@ import { addClient, blankLine, deleteDoc, quoteToInvoice, updateDoc, useStore } 
 import { fmtDate, money, phoneForWhatsApp, totals } from "@/lib/format";
 import { DOC_LABEL, STATUSES_BY_TYPE, STATUS_LABEL, type Line } from "@/lib/types";
 import { NumInput } from "@/components/NumInput";
-import { StatusBadge } from "@/components/DocBits";
+import { StatusBadge, isOverdue } from "@/components/DocBits";
 import { Icon } from "@/components/Icon";
+import { ReminderButtons } from "@/components/Reminder";
 
 const VATS = [21, 10, 4, 0];
 
@@ -47,6 +48,28 @@ export default function Documento() {
           {client?.email && <a className="btn" href={mail}>Email</a>}
         </div>
       </div>
+
+      {d.type === "quote" && d.status === "accepted" && !linkedInvoice && (
+        <div className="card" style={{ borderColor: "var(--brand)", background: "var(--brand-l)" }}>
+          <div className="row between wrap">
+            <div><strong>El cliente ha aceptado este presupuesto.</strong><div className="muted">Pásalo a factura con un toque; se copian los conceptos, el IVA y el cliente.</div></div>
+            <button className="btn primary" onClick={() => router.push(`/documentos/${quoteToInvoice(d.id)!.id}`)}>Crear factura</button>
+          </div>
+        </div>
+      )}
+
+      {d.type === "invoice" && d.status === "sent" && (
+        <div className="card" style={isOverdue(d) ? { borderColor: "var(--warn)" } : undefined}>
+          <div className="row between wrap">
+            <div>
+              <strong>{isOverdue(d) ? "Factura vencida" : "Pendiente de cobro"}</strong>
+              <div className="muted">{d.lastReminder ? `Último recordatorio: ${fmtDate(d.lastReminder)}` : "Aún no has enviado ningún recordatorio."}</div>
+            </div>
+            <div className="row wrap"><ReminderButtons doc={d} client={client} settings={settings} />
+              <button className="btn primary" onClick={() => updateDoc(d.id, { status: "paid" })}>Marcar cobrada</button></div>
+          </div>
+        </div>
+      )}
 
       <div className="card grid g2 keep">
         <div>

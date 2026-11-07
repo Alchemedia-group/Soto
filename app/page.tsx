@@ -1,13 +1,15 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { addClient, clientName, useStore } from "@/lib/store";
+import { addClient, clientName, quoteToInvoice, useStore } from "@/lib/store";
 import { fmtDate, money, totals } from "@/lib/format";
 import { DOC_LABEL } from "@/lib/types";
 import { NewDocButton, StatusBadge, isOverdue } from "@/components/DocBits";
+import { ReminderButtons } from "@/components/Reminder";
+import { daysOverdue } from "@/lib/reminder";
 
 export default function Dashboard() {
-  const { ready, docs, clients } = useStore();
+  const { ready, docs, clients, settings } = useStore();
   const router = useRouter();
   if (!ready) return null;
 
@@ -19,6 +21,7 @@ export default function Dashboard() {
   const monthBilled = invoices.filter((d) => d.status !== "draft" && d.date.startsWith(month));
   const openQuotes = docs.filter((d) => d.type === "quote" && d.status === "sent");
   const recent = docs.slice(0, 6);
+  const toInvoice = docs.filter((q) => q.type === "quote" && q.status === "accepted" && !docs.some((i) => i.fromQuoteId === q.id));
 
   return (
     <div className="stack">
@@ -43,6 +46,46 @@ export default function Dashboard() {
         <NewDocButton type="invoice" primary={false} />
         <button className="btn" onClick={() => router.push(`/clientes/${addClient({ name: "Nuevo cliente" }).id}`)}>Nuevo cliente</button>
       </div>
+
+      {toInvoice.length > 0 && (
+        <div className="card">
+          <h2>Aceptados, listos para facturar</h2>
+          <div className="list">
+            {toInvoice.map((q) => (
+              <div key={q.id} className="item">
+                <Link href={`/documentos/${q.id}`}>
+                  <span><strong>{q.number}</strong> <span className="muted">· {clientName(clients, q.clientId)}</span></span>
+                </Link>
+                <div className="row">
+                  <strong>{money(totals(q).total)}</strong>
+                  <button className="btn primary sm" onClick={() => router.push(`/documentos/${quoteToInvoice(q.id)!.id}`)}>Crear factura</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {overdue.length > 0 && (
+        <div className="card">
+          <h2>Recordatorios de pago</h2>
+          <div className="list">
+            {overdue.slice(0, 5).map((d) => (
+              <div key={d.id} className="item" style={{ flexWrap: "wrap" }}>
+                <Link href={`/documentos/${d.id}`}>
+                  <span>
+                    <strong>{clientName(clients, d.clientId)}</strong> <span className="muted">· {d.number}</span>
+                    <div style={{ fontSize: ".85rem", color: "var(--warn)" }}>Vencida hace {daysOverdue(d)} días · {money(totals(d).total)}</div>
+                  </span>
+                </Link>
+                <div className="row wrap">
+                  <ReminderButtons doc={d} client={clients.find((c) => c.id === d.clientId)} settings={settings} small />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="card">
         <h2>Últimos documentos</h2>

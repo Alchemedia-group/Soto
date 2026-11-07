@@ -104,3 +104,17 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand); out
   .nav-hidden .mic { bottom: calc(1rem + env(safe-area-inset-bottom)); }
   .nav-hidden .panel { bottom: calc(1rem + env(safe-area-inset-bottom)); }
 }
+
+.list .item a { padding: 0; border: 0; flex: 1; }
+
+/* Branded printable document */
+.doc-logo { position: relative; width: 220px; height: 70px; overflow: hidden; }
+.doc-logo img { position: absolute; width: 280px; left: -30px; top: -38px; max-width: none; }
+.doc-band { background: #0a2342; color: #fff; padding: .5rem .9rem; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; letter-spacing: .12em; font-weight: 700; }
+.paper table thead th { background: #0a2342; color: #fff; border: 0; }
+.paper .box { border: 1px solid #cfd8e3; border-radius: 6px; padding: .8rem 1rem; }
+.paper .lbl { font-size: .7em; letter-spacing: .12em; text-transform: uppercase; color: #5b6b7b; font-weight: 700; margin-bottom: .2rem; }
+.paper .services { margin-top: 2rem; padding-top: .8rem; border-top: 1px solid #cfd8e3; text-align: center; font-size: .7em; letter-spacing: .18em; color: #0a2342; font-weight: 700; text-transform: uppercase; }
+.paper .sign { height: 70px; border-bottom: 1px solid #111; }
+@media print { .doc-band, .paper table thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+@media (max-width: 640px) { .doc-logo { width: 150px; height: 48px; } .doc-logo img { width: 191px; left: -20px; top: -26px; } }
