@@ -9,6 +9,7 @@ import { NumInput } from "@/components/NumInput";
 import { StatusBadge, isOverdue } from "@/components/DocBits";
 import { Icon } from "@/components/Icon";
 import { ReminderButtons } from "@/components/Reminder";
+import { PdfButtons } from "@/components/PdfButtons";
 import { LineDescription } from "@/components/LineDescription";
 
 const VATS = [21, 10, 4, 0];
@@ -49,7 +50,8 @@ export default function Documento() {
           </div>
         </div>
         <div className="row wrap">
-          <Link className="btn" href={`/documentos/${d.id}/imprimir`}>PDF / Imprimir</Link>
+          <PdfButtons doc={d} client={client} settings={settings} text={msg} />
+          <Link className="btn" href={`/documentos/${d.id}/imprimir`}>Vista previa / Imprimir</Link>
           <a className="btn" href={wa} target="_blank" rel="noreferrer">WhatsApp</a>
           {client?.email && <a className="btn" href={mail}>Email</a>}
         </div>

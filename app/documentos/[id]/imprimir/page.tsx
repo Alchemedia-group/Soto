@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { addDays, docNumber, fmtDate, money, totals } from "@/lib/format";
 import { DOC_LABEL } from "@/lib/types";
+import { PdfButtons } from "@/components/PdfButtons";
 
 export default function Imprimir() {
   const { id } = useParams<{ id: string }>();
@@ -20,7 +21,10 @@ export default function Imprimir() {
     <div className="stack">
       <div className="row between no-print">
         <Link className="btn" href={`/documentos/${d.id}`}>← Volver</Link>
-        <button className="btn primary" onClick={() => window.print()}>Imprimir / Guardar PDF</button>
+        <div className="row wrap">
+          <PdfButtons doc={d} client={c} settings={s} text={`${DOC_LABEL[d.type]} ${docNumber(d)} de ${s.companyName}`} />
+          <button className="btn" onClick={() => window.print()}>Imprimir</button>
+        </div>
       </div>
 
       <div className="paper">
