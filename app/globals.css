@@ -106,7 +106,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand); out
   .nav-hidden .tabbar { transform: translateY(110%); }
 }
 
-.list .item a { padding: 0; border: 0; flex: 1; }
+.list .item > a { padding: 0; border: 0; flex: 1; } /* only the row's own link, not buttons inside it */
 
 /* Branded printable document */
 .doc-logo { position: relative; width: 220px; height: 70px; overflow: hidden; }

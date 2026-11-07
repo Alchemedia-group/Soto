@@ -80,7 +80,7 @@ export default function Dashboard() {
                   <strong>{clientName(clients, q.clientId)}</strong> <span className="muted">· {docNumber(q)}</span>
                   <div className="muted" style={{ fontSize: ".85rem" }}>{q.response!.comment ? `“${q.response!.comment}” · ` : ""}{fmtDate(q.response!.at.slice(0, 10))}</div>
                 </span>
-                <span className={`badge b-${q.status}`}>{q.response!.decision === "accepted" ? "Aceptó" : "Rechazó"}</span>
+                <span className={`badge ${q.status}`}>{q.response!.decision === "accepted" ? "Aceptó" : "Rechazó"}</span>
               </Link>
             ))}
           </div>
