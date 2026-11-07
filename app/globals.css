@@ -43,12 +43,17 @@ h1 { font-size: 1.5rem; margin: 0 0 .25rem; } h2 { font-size: 1.1rem; margin: 0 
 .tabbar { display: none; }
 @media (max-width: 760px) {
   .shell { grid-template-columns: minmax(0, 1fr); } .side { display: none; }
-  .main { padding: 1rem; padding-bottom: 8rem; }
+  .main { padding: 1rem; padding-bottom: 6rem; } /* room for the tab bar (the mic button that needed more is gone) */
+  /* In a browser tab the browser already keeps clear of the system bars, so no extra bottom space here:
+     adding the "safe area" there made the bar jump taller (a gap under the labels) whenever the phone reported one. */
   .tabbar { display: flex; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card);
-    border-top: 1px solid var(--line); padding: .3rem .2rem calc(.3rem + env(safe-area-inset-bottom)); z-index: 20; }
+    border-top: 1px solid var(--line); padding: .3rem .2rem; z-index: 20; }
   .tabbar a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .7rem;
     color: var(--muted); font-weight: 600; padding: .35rem 0; }
   .tabbar a.on { color: var(--brand); }
+}
+@media (max-width: 760px) and ((display-mode: standalone) or (display-mode: fullscreen) or (display-mode: minimal-ui)) {
+  .tabbar { padding-bottom: calc(.3rem + min(env(safe-area-inset-bottom, 0px), 14px)); }
 }
 
 /* ui */
