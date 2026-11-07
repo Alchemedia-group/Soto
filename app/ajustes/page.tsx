@@ -39,6 +39,7 @@ export default function Ajustes() {
           <div><label>Teléfono</label><input type="tel" value={s.phone} onChange={txt("phone")} /></div>
           <div><label>Email</label><input type="email" value={s.email} onChange={txt("email")} /></div>
           <div><label>IBAN (para cobros)</label><input value={s.iban} onChange={txt("iban")} /></div>
+          <div><label>Bizum (teléfono para cobros)</label><input type="tel" value={s.bizum} onChange={txt("bizum")} placeholder="600 000 000" /></div>
           <div style={{ gridColumn: "1 / -1" }}><label>Dirección</label><textarea value={s.address} onChange={txt("address")} placeholder={"Calle, número\nCódigo postal, localidad"} /></div>
           <div style={{ gridColumn: "1 / -1" }}><label>Pie de documentos (registro mercantil, protección de datos…)</label><textarea value={s.footer} onChange={txt("footer")} /></div>
         </div>

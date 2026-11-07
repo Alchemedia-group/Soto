@@ -77,7 +77,9 @@ export default function Imprimir() {
         {isInvoice ? (
           <div className="box" style={{ marginTop: "1.5rem" }}>
             <div className="lbl">Forma de pago</div>
-            {s.iban ? <div>Transferencia bancaria a <strong>{s.iban}</strong></div> : <div>Transferencia bancaria</div>}
+            {s.iban && <div>Transferencia bancaria a <strong>{s.iban}</strong></div>}
+            {s.bizum && <div>Bizum al <strong>{s.bizum}</strong></div>}
+            {!s.iban && !s.bizum && <div>Transferencia bancaria</div>}
             <div style={{ fontSize: ".9em" }}>Indica el número de factura <strong>{d.number}</strong> en el concepto. Vencimiento: {fmtDate(d.dueDate)}.</div>
           </div>
         ) : (

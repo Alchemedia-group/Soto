@@ -58,6 +58,7 @@ export type Settings = {
   phone: string;
   email: string;
   iban: string;
+  bizum: string; // phone number that receives Bizum payments
   defaultVat: number;
   defaultIrpf: number;
   quotePrefix: string;
@@ -73,6 +74,7 @@ export const DEFAULT_SETTINGS: Settings = {
   phone: "",
   email: "",
   iban: "",
+  bizum: "",
   defaultVat: 21,
   defaultIrpf: 0,
   quotePrefix: "P",

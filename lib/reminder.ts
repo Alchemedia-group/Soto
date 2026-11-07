@@ -15,8 +15,9 @@ export function reminderMessage(doc: Doc, client: Client | undefined, s: Setting
       ? `venció el ${fmtDate(doc.dueDate)}`
       : `vence el ${fmtDate(doc.dueDate)}`
     : "está pendiente";
-  const pay = s.iban
-    ? `Puedes abonarla por transferencia a ${s.iban}, indicando el número de factura.`
+  const ways = [s.iban && `por transferencia a ${s.iban}`, s.bizum && `por Bizum al ${s.bizum}`].filter(Boolean);
+  const pay = ways.length
+    ? `Puedes abonarla ${ways.join(" o ")}, indicando el número de factura.`
     : "Si tienes cualquier duda sobre el pago, respóndenos a este mensaje.";
   const subject = `Recordatorio de pago – Factura ${doc.number}`;
   const body = [
