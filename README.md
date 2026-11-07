@@ -22,6 +22,8 @@ npm run dev                  # http://localhost:3000
 - Asistente de voz: dictado del navegador (es-ES) + Claude (`app/api/assistant`) que convierte la orden en acciones.
   Sin `ANTHROPIC_API_KEY` solo entiende órdenes simples ("abre facturas", "nuevo cliente Ana").
 - Instalable en el móvil (Añadir a pantalla de inicio).
+- Modo claro / oscuro / automático (Ajustes → Apariencia; se guarda en cada dispositivo).
+- Bizum e IBAN como formas de pago en facturas y recordatorios.
 
 ## Catálogo de servicios y productos
 

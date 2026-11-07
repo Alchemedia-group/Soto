@@ -7,6 +7,7 @@ import { Voice } from "./Voice";
 import { useStore } from "@/lib/store";
 import { startSync, useSync } from "@/lib/sync";
 import { LoginScreen } from "./AuthGate";
+import { initTheme } from "@/lib/theme";
 
 const NAV = [
   { href: "/", label: "Inicio", icon: "home", phone: true },
@@ -54,7 +55,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </Link>
     ));
   const sync = useSync();
-  useEffect(() => { startSync(); }, []);
+  useEffect(() => { startSync(); initTheme(); }, []);
   if (sync.enabled && !sync.ready) return null; // checking session
   if (sync.enabled && !sync.signedIn) return <LoginScreen />;
   const syncLabel =

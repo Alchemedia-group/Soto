@@ -5,11 +5,13 @@ import { exportData, importData, updateSettings, useStore } from "@/lib/store";
 import { NumInput } from "@/components/NumInput";
 import { push, pull, signOut, useSync } from "@/lib/sync";
 import { fmtDate } from "@/lib/format";
+import { setTheme, useTheme, type Theme } from "@/lib/theme";
 import type { Settings } from "@/lib/types";
 
 export default function Ajustes() {
   const { ready, settings: s, catalog } = useStore();
   const sync = useSync();
+  const theme = useTheme();
   const file = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState("");
   if (!ready) return null;
@@ -42,6 +44,18 @@ export default function Ajustes() {
           <div><label>Bizum (teléfono para cobros)</label><input type="tel" value={s.bizum} onChange={txt("bizum")} placeholder="600 000 000" /></div>
           <div style={{ gridColumn: "1 / -1" }}><label>Dirección</label><textarea value={s.address} onChange={txt("address")} placeholder={"Calle, número\nCódigo postal, localidad"} /></div>
           <div style={{ gridColumn: "1 / -1" }}><label>Pie de documentos (registro mercantil, protección de datos…)</label><textarea value={s.footer} onChange={txt("footer")} /></div>
+        </div>
+      </div>
+
+      <div className="card stack">
+        <div>
+          <h2 style={{ marginBottom: 0 }}>Apariencia</h2>
+          <p className="muted" style={{ margin: 0 }}>Elige el modo claro u oscuro. “Automático” sigue el del teléfono u ordenador. Se guarda en este dispositivo: el móvil y el ordenador pueden tener cada uno el suyo.</p>
+        </div>
+        <div className="theme-opts" role="radiogroup" aria-label="Apariencia">
+          {([["system", "Automático"], ["light", "Claro"], ["dark", "Oscuro"]] as [Theme, string][]).map(([v, label]) => (
+            <button key={v} type="button" role="radio" aria-checked={theme === v} className={`chip ${theme === v ? "on" : ""}`} onClick={() => setTheme(v)}>{label}</button>
+          ))}
         </div>
       </div>
 
