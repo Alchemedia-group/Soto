@@ -95,3 +95,12 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand); out
   .paper { padding: 1rem; font-size: .8rem; } .paper h1 { font-size: 1.15rem; } .paper th, .paper td { padding: .35rem .2rem; }
 }
 @media print { .paper { font-size: 11pt; } }
+
+/* Phone tab bar auto-hide */
+@media (max-width: 760px) {
+  .tabbar { transition: transform .25s ease; }
+  .mic, .panel { transition: bottom .25s ease; }
+  .nav-hidden .tabbar { transform: translateY(110%); }
+  .nav-hidden .mic { bottom: calc(1rem + env(safe-area-inset-bottom)); }
+  .nav-hidden .panel { bottom: calc(1rem + env(safe-area-inset-bottom)); }
+}
