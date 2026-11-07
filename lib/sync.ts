@@ -53,12 +53,12 @@ const fromClient = (c: Client): Row => ({
 const toDoc = (r: Row): Doc => ({
   id: r.id, type: r.type, number: r.number, clientId: r.client_id ?? "", date: r.date, dueDate: r.due_date ?? "",
   lines: r.lines ?? [], irpf: Number(r.irpf) || 0, status: r.status, notes: r.notes,
-  fromQuoteId: r.from_quote_id ?? undefined, lastReminder: r.last_reminder ?? undefined, createdAt: r.created_at,
+  fromQuoteId: r.from_quote_id ?? undefined, lastReminder: r.last_reminder ?? undefined, cancelled: r.cancelled ?? undefined, createdAt: r.created_at,
 });
 const fromDoc = (d: Doc): Row => ({
   id: d.id, type: d.type, number: d.number, client_id: d.clientId || null, date: d.date, due_date: d.dueDate || null,
   lines: d.lines, irpf: d.irpf, status: d.status, notes: d.notes, from_quote_id: d.fromQuoteId ?? null,
-  last_reminder: d.lastReminder ?? null, created_at: d.createdAt, deleted_at: null,
+  last_reminder: d.lastReminder ?? null, cancelled: d.cancelled ?? null, created_at: d.createdAt, deleted_at: null,
 });
 const toItem = (r: Row): CatalogItem => ({
   id: r.id, name: r.name, price: Number(r.price) || 0, vat: Number(r.vat) || 0, unit: r.unit, category: r.category,

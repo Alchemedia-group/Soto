@@ -1,6 +1,7 @@
 "use client";
 import { addClient, bumpCatalogUse, createDoc, quoteToInvoice, updateDoc, type State } from "./store";
 import { searchCatalog } from "./catalog";
+import { docNumber } from "./format";
 import { totals, norm } from "./format";
 import { STATUSES_BY_TYPE, STATUS_LABEL, type DocStatus, type DocType } from "./types";
 
@@ -10,7 +11,7 @@ export type ActionResult = { message: string; path?: string };
 /** Compact snapshot of the business sent to the assistant so it can answer questions. */
 export function buildContext(s: State) {
   const docs = s.docs.slice(0, 80).map((d) => ({
-    number: d.number,
+    number: docNumber(d),
     type: d.type,
     client: s.clients.find((c) => c.id === d.clientId)?.name ?? "",
     status: d.status,
@@ -45,11 +46,11 @@ function findClient(s: State, name: string) {
 function findDoc(s: State, number: string) {
   const n = norm(number).replace(/\s/g, "");
   if (!n) return undefined;
-  const exact = s.docs.find((d) => norm(d.number) === n);
+  const exact = s.docs.find((d) => d.number && norm(d.number) === n);
   if (exact) return exact;
   if (/^\d+$/.test(n)) {
     const seq = parseInt(n, 10);
-    return s.docs.find((d) => parseInt(d.number.split("-").pop() ?? "", 10) === seq);
+    return s.docs.find((d) => d.number && parseInt(d.number.split("-").pop() ?? "", 10) === seq);
   }
   return undefined;
 }

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { clientName, useStore } from "@/lib/store";
-import { fmtDate, money, norm, totals } from "@/lib/format";
+import { docNumber, fmtDate, money, norm, totals } from "@/lib/format";
 import { DOC_LABEL, STATUSES_BY_TYPE, STATUS_LABEL, type DocStatus, type DocType } from "@/lib/types";
 import { NewDocButton, StatusBadge } from "./DocBits";
 
@@ -15,8 +15,8 @@ export function DocList({ type }: { type: DocType }) {
   const rows = docs
     .filter((d) => d.type === type)
     .filter((d) => status === "all" || d.status === status)
-    .filter((d) => !q || norm(`${d.number} ${clientName(clients, d.clientId)}`).includes(norm(q)))
-    .sort((a, b) => b.date.localeCompare(a.date) || b.number.localeCompare(a.number));
+    .filter((d) => !q || norm(`${docNumber(d)} ${clientName(clients, d.clientId)}`).includes(norm(q)))
+    .sort((a, b) => b.date.localeCompare(a.date) || docNumber(b).localeCompare(docNumber(a)));
 
   return (
     <div className="stack">
@@ -26,7 +26,7 @@ export function DocList({ type }: { type: DocType }) {
       </div>
       <input placeholder="Buscar por número o cliente…" value={q} onChange={(e) => setQ(e.target.value)} />
       <div className="chips">
-        {(["all", ...STATUSES_BY_TYPE[type]] as const).map((s) => (
+        {(["all", ...STATUSES_BY_TYPE[type], ...(type === "invoice" ? (["cancelled"] as const) : [])] as const).map((s) => (
           <button key={s} className={`chip ${status === s ? "on" : ""}`} onClick={() => setStatus(s)}>
             {s === "all" ? "Todos" : STATUS_LABEL[s]}
           </button>
@@ -40,7 +40,7 @@ export function DocList({ type }: { type: DocType }) {
             {rows.map((d) => (
               <Link key={d.id} href={`/documentos/${d.id}`}>
                 <div>
-                  <strong>{d.number}</strong>
+                  <strong>{docNumber(d)}</strong>
                   <div className="muted" style={{ fontSize: ".85rem" }}>{clientName(clients, d.clientId)} · {fmtDate(d.date)}</div>
                 </div>
                 <div className="right">

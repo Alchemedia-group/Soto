@@ -1,8 +1,9 @@
 "use client";
 import Link from "next/link";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { addClient, blankLine, bumpCatalogUse, deleteDoc, findCatalogByName, quoteToInvoice, saveLineToCatalog, updateDoc, useStore } from "@/lib/store";
-import { fmtDate, money, phoneForWhatsApp, totals } from "@/lib/format";
+import { addClient, blankLine, bumpCatalogUse, cancelInvoice, deleteDoc, findCatalogByName, quoteToInvoice, saveLineToCatalog, updateDoc, useStore } from "@/lib/store";
+import { docNumber, fmtDate, money, phoneForWhatsApp, totals } from "@/lib/format";
 import { DOC_LABEL, STATUSES_BY_TYPE, STATUS_LABEL, type Line } from "@/lib/types";
 import { NumInput } from "@/components/NumInput";
 import { StatusBadge, isOverdue } from "@/components/DocBits";
@@ -16,6 +17,8 @@ export default function Documento() {
   const { id } = useParams<{ id: string }>();
   const { ready, docs, clients, settings, catalog } = useStore();
   const router = useRouter();
+  const [cancelling, setCancelling] = useState(false);
+  const [release, setRelease] = useState(true);
   if (!ready) return null;
   const d = docs.find((x) => x.id === id);
   if (!d) return <div className="empty">Documento no encontrado. <Link href="/"><u>Inicio</u></Link></div>;
@@ -25,9 +28,11 @@ export default function Documento() {
   const label = DOC_LABEL[d.type];
   const setLine = (lid: string, patch: Partial<Line>) =>
     updateDoc(d.id, { lines: d.lines.map((l) => (l.id === lid ? { ...l, ...patch } : l)) });
-  const linkedInvoice = d.type === "quote" ? docs.find((x) => x.fromQuoteId === d.id) : undefined;
+  const linkedInvoice = d.type === "quote" ? docs.find((x) => x.fromQuoteId === d.id && x.status !== "cancelled") : undefined;
   const fromQuote = d.fromQuoteId ? docs.find((x) => x.id === d.fromQuoteId) : undefined;
-  const locked = d.type === "invoice" && d.status !== "draft"; // issued invoices: keep numbering intact
+  const locked = d.type === "invoice" && d.status !== "draft" && !d.cancelled?.released; // issued invoices: keep numbering intact
+  const isCancelled = d.status === "cancelled";
+  const fromQuoteDoc = d.fromQuoteId ? docs.find((x) => x.id === d.fromQuoteId) : undefined;
 
   const msg = `Hola${client ? " " + client.name : ""}, te envío ${d.type === "quote" ? "el presupuesto" : "la factura"} ${d.number} de ${settings.companyName} por importe de ${money(t.total)}.`;
   const wa = `https://wa.me/${phoneForWhatsApp(client?.phone ?? "")}?text=${encodeURIComponent(msg)}`;
@@ -37,10 +42,10 @@ export default function Documento() {
     <div className="stack">
       <div className="row between wrap">
         <div>
-          <h1>{label} {d.number}</h1>
+          <h1>{label} {docNumber(d)}</h1>
           <div className="row"><StatusBadge doc={d} />
-            {fromQuote && <Link className="muted" href={`/documentos/${fromQuote.id}`}>desde {fromQuote.number}</Link>}
-            {linkedInvoice && <Link className="muted" href={`/documentos/${linkedInvoice.id}`}>→ {linkedInvoice.number}</Link>}
+            {fromQuote && <Link className="muted" href={`/documentos/${fromQuote.id}`}>desde {docNumber(fromQuote)}</Link>}
+            {linkedInvoice && <Link className="muted" href={`/documentos/${linkedInvoice.id}`}>→ {docNumber(linkedInvoice)}</Link>}
           </div>
         </div>
         <div className="row wrap">
@@ -49,6 +54,36 @@ export default function Documento() {
           {client?.email && <a className="btn" href={mail}>Email</a>}
         </div>
       </div>
+
+      {isCancelled && (
+        <div className="card" style={{ borderColor: "var(--danger)" }}>
+          <strong>Factura anulada</strong>
+          <div className="muted">
+            {d.cancelled?.released
+              ? `El cliente no siguió adelante. El número ${d.cancelled.formerNumber} quedó libre y se usará en la siguiente factura.`
+              : `El cliente no siguió adelante. Conserva su número ${d.number} (ya se había enviado): pide a tu gestor la factura rectificativa.`}
+          </div>
+        </div>
+      )}
+
+      {cancelling && d.type === "invoice" && d.status === "sent" && (
+        <div className="card stack" style={{ borderColor: "var(--danger)" }}>
+          <div><strong>Anular la factura {d.number}</strong><div className="muted">El cliente no sigue adelante. ¿Se llegó a entregar esta factura?</div></div>
+          <label style={{ display: "flex", gap: ".6rem", alignItems: "flex-start", color: "var(--text)", fontSize: "1rem" }}>
+            <input type="radio" style={{ width: 24, minHeight: 24 }} checked={release} onChange={() => setRelease(true)} />
+            <span><strong>No, nunca salió de aquí.</strong> Libero el número {d.number}: lo usará la siguiente factura real.</span>
+          </label>
+          <label style={{ display: "flex", gap: ".6rem", alignItems: "flex-start", color: "var(--text)", fontSize: "1rem" }}>
+            <input type="radio" style={{ width: 24, minHeight: 24 }} checked={!release} onChange={() => setRelease(false)} />
+            <span><strong>Sí, ya se la envié.</strong> Queda anulada y conserva su número (la ley exige numeración correlativa sin repetir); tu gestor emitirá la rectificativa.</span>
+          </label>
+          {fromQuoteDoc && fromQuoteDoc.status === "accepted" && <div className="muted">El presupuesto {fromQuoteDoc.number} pasará a “Rechazado”.</div>}
+          <div className="row wrap">
+            <button className="btn danger" onClick={() => { cancelInvoice(d.id, release); setCancelling(false); }}>Anular factura</button>
+            <button className="btn" onClick={() => setCancelling(false)}>Volver</button>
+          </div>
+        </div>
+      )}
 
       {d.type === "quote" && d.status === "accepted" && !linkedInvoice && (
         <div className="card" style={{ borderColor: "var(--brand)", background: "var(--brand-l)" }}>
@@ -147,20 +182,23 @@ export default function Documento() {
 
       <div className="card">
         <h2>Estado</h2>
-        <div className="chips">
-          {STATUSES_BY_TYPE[d.type].map((s) => (
-            <button key={s} className={`chip ${d.status === s ? "on" : ""}`} onClick={() => updateDoc(d.id, { status: s })}>{STATUS_LABEL[s]}</button>
-          ))}
-        </div>
+        {isCancelled ? <div className="muted">Anulada: ya no se puede cambiar su estado.</div> : (
+          <div className="chips">
+            {STATUSES_BY_TYPE[d.type].map((s) => (
+              <button key={s} className={`chip ${d.status === s ? "on" : ""}`} onClick={() => updateDoc(d.id, { status: s })}>{STATUS_LABEL[s]}</button>
+            ))}
+          </div>
+        )}
         <div className="row wrap" style={{ marginTop: ".8rem" }}>
           {d.type === "quote" && (
             linkedInvoice
-              ? <Link className="btn" href={`/documentos/${linkedInvoice.id}`}>Ver factura {linkedInvoice.number}</Link>
+              ? <Link className="btn" href={`/documentos/${linkedInvoice.id}`}>Ver factura {docNumber(linkedInvoice)}</Link>
               : <button className="btn primary" onClick={() => router.push(`/documentos/${quoteToInvoice(d.id)!.id}`)}>Convertir en factura</button>
           )}
+          {d.type === "invoice" && d.status === "sent" && !cancelling && <button className="btn danger" onClick={() => setCancelling(true)}>Anular factura</button>}
           <button className="btn danger" onClick={() => {
-            if (locked) { alert("Una factura emitida no se puede eliminar para mantener la numeración correlativa. Pásala a borrador si de verdad quieres borrarla."); return; }
-            if (confirm(`¿Eliminar ${d.number}?`)) { deleteDoc(d.id); router.push(d.type === "quote" ? "/presupuestos" : "/facturas"); }
+            if (locked) { alert("Una factura emitida no se puede eliminar para mantener la numeración correlativa. Si el cliente no sigue adelante, usa “Anular factura”."); return; }
+            if (confirm(d.type === "invoice" && d.number ? `¿Eliminar ${d.number}? Su número quedará libre para la siguiente factura.` : `¿Eliminar ${docNumber(d)}?`)) { deleteDoc(d.id); router.push(d.type === "quote" ? "/presupuestos" : "/facturas"); }
           }}>Eliminar</button>
         </div>
         <p className="muted" style={{ fontSize: ".8rem", marginBottom: 0 }}>Fecha: {fmtDate(d.date)}</p>

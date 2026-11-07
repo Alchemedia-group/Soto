@@ -31,7 +31,7 @@ export type CatalogItem = {
 export const CATEGORIES = ["Fontanería", "Clima", "Electricidad", "Fotovoltaica"];
 
 export type DocType = "quote" | "invoice";
-export type DocStatus = "draft" | "sent" | "accepted" | "rejected" | "paid";
+export type DocStatus = "draft" | "sent" | "accepted" | "rejected" | "paid" | "cancelled";
 
 export type Doc = {
   id: string;
@@ -46,6 +46,8 @@ export type Doc = {
   notes: string;
   fromQuoteId?: string;
   lastReminder?: string; // yyyy-mm-dd of the last payment reminder sent
+  /** Set when an invoice is cancelled. If `released`, `number` is "" and the old number is free for the next invoice. */
+  cancelled?: { at: string; formerNumber: string; released: boolean };
   createdAt: string;
 };
 
@@ -85,6 +87,7 @@ export const STATUS_LABEL: Record<DocStatus, string> = {
   accepted: "Aceptado",
   rejected: "Rechazado",
   paid: "Cobrada",
+  cancelled: "Anulada",
 };
 
 export const STATUSES_BY_TYPE: Record<DocType, DocStatus[]> = {

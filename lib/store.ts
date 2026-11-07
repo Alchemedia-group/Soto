@@ -206,13 +206,29 @@ export function nextNumber(type: DocType, docs = get().docs, settings = get().se
   const prefix = type === "quote" ? settings.quotePrefix : settings.invoicePrefix;
   const esc = prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const re = new RegExp(`^${esc}-${year}-(\\d+)$`);
+  const fmt = (n: number) => `${prefix}-${year}-${String(n).padStart(4, "0")}`;
+  const used = new Set<number>();
   let max = 0;
   for (const d of docs) {
     if (d.type !== type) continue;
     const m = re.exec(d.number);
-    if (m) max = Math.max(max, parseInt(m[1], 10));
+    if (m) {
+      const n = parseInt(m[1], 10);
+      used.add(n);
+      max = Math.max(max, n);
+    }
   }
-  return `${prefix}-${year}-${String(max + 1).padStart(4, "0")}`;
+  if (type === "invoice") {
+    // Invoice numbers must be consecutive: reuse a number freed by a cancelled/deleted invoice before moving on.
+    const free: number[] = [];
+    if (used.size) for (let n = Math.min(...used); n < max; n++) if (!used.has(n)) free.push(n);
+    for (const d of docs) {
+      const m = d.type === "invoice" && d.cancelled?.released ? re.exec(d.cancelled.formerNumber) : null;
+      if (m && !used.has(parseInt(m[1], 10))) free.push(parseInt(m[1], 10));
+    }
+    if (free.length) return fmt(Math.min(...free));
+  }
+  return fmt(max + 1);
 }
 
 export const blankLine = (vat = get().settings.defaultVat): Line => ({
@@ -267,7 +283,7 @@ export function deleteDoc(id: string) {
 export function quoteToInvoice(quoteId: string): Doc | null {
   const q = get().docs.find((d) => d.id === quoteId);
   if (!q) return null;
-  const existing = get().docs.find((d) => d.fromQuoteId === quoteId);
+  const existing = get().docs.find((d) => d.fromQuoteId === quoteId && d.status !== "cancelled");
   if (existing) return existing;
   const inv = createDoc("invoice", { clientId: q.clientId, notes: q.notes, fromQuoteId: q.id });
   updateDoc(inv.id, {
@@ -276,6 +292,23 @@ export function quoteToInvoice(quoteId: string): Doc | null {
   });
   updateDoc(q.id, { status: "accepted" });
   return get().docs.find((d) => d.id === inv.id)!;
+}
+
+/**
+ * Cancel an invoice (client does not go ahead). `releaseNumber`: the invoice never reached the client, so its
+ * number is freed and the next invoice reuses it. Otherwise it stays as "Anulada" and keeps its number.
+ */
+export function cancelInvoice(id: string, releaseNumber: boolean) {
+  const d = get().docs.find((x) => x.id === id);
+  if (!d || d.type !== "invoice" || d.status === "paid" || d.status === "cancelled") return;
+  updateDoc(id, {
+    status: "cancelled",
+    number: releaseNumber ? "" : d.number,
+    cancelled: { at: new Date().toISOString(), formerNumber: d.number, released: releaseNumber },
+    lastReminder: undefined,
+  });
+  const q = d.fromQuoteId ? get().docs.find((x) => x.id === d.fromQuoteId) : undefined;
+  if (q && q.status === "accepted") updateDoc(q.id, { status: "rejected" });
 }
 
 // ---------- Settings & backup ----------

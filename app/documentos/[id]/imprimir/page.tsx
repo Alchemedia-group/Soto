@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { addDays, fmtDate, money, totals } from "@/lib/format";
+import { addDays, docNumber, fmtDate, money, totals } from "@/lib/format";
 import { DOC_LABEL } from "@/lib/types";
 
 export default function Imprimir() {
@@ -36,7 +36,7 @@ export default function Imprimir() {
 
         <div className="doc-band" style={{ margin: "1.2rem 0" }}>
           <span>{DOC_LABEL[d.type].toUpperCase()}</span>
-          <span>{d.number}</span>
+          <span>{d.status === "cancelled" ? "ANULADA · " : ""}{docNumber(d)}</span>
         </div>
 
         <div className="row" style={{ alignItems: "stretch", gap: "1rem", flexWrap: "wrap" }}>

@@ -51,3 +51,7 @@ export function phoneForWhatsApp(phone: string) {
   if (!digits) return "";
   return digits.length === 9 ? "34" + digits : digits;
 }
+
+/** What to show as a document's number (cancelled invoices that freed their number have none). */
+export const docNumber = (d: Pick<Doc, "number" | "cancelled">) =>
+  d.number || (d.cancelled ? `Anulada (antes ${d.cancelled.formerNumber})` : "Sin número");

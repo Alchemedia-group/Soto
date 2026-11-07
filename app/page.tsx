@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { addClient, clientName, quoteToInvoice, useStore } from "@/lib/store";
-import { fmtDate, money, totals } from "@/lib/format";
+import { docNumber, fmtDate, money, totals } from "@/lib/format";
 import { DOC_LABEL } from "@/lib/types";
 import { NewDocButton, StatusBadge, isOverdue } from "@/components/DocBits";
 import { ReminderButtons } from "@/components/Reminder";
@@ -18,10 +18,10 @@ export default function Dashboard() {
   const pending = invoices.filter((d) => d.status === "sent");
   const overdue = pending.filter(isOverdue);
   const sum = (arr: typeof docs) => arr.reduce((s, d) => s + totals(d).total, 0);
-  const monthBilled = invoices.filter((d) => d.status !== "draft" && d.date.startsWith(month));
+  const monthBilled = invoices.filter((d) => d.status !== "draft" && d.status !== "cancelled" && d.date.startsWith(month));
   const openQuotes = docs.filter((d) => d.type === "quote" && d.status === "sent");
   const recent = docs.slice(0, 6);
-  const toInvoice = docs.filter((q) => q.type === "quote" && q.status === "accepted" && !docs.some((i) => i.fromQuoteId === q.id));
+  const toInvoice = docs.filter((q) => q.type === "quote" && q.status === "accepted" && !docs.some((i) => i.fromQuoteId === q.id && i.status !== "cancelled"));
 
   return (
     <div className="stack">
@@ -96,7 +96,7 @@ export default function Dashboard() {
             {recent.map((d) => (
               <Link key={d.id} href={`/documentos/${d.id}`}>
                 <div>
-                  <strong>{d.number}</strong> <span className="muted">· {DOC_LABEL[d.type]}</span>
+                  <strong>{docNumber(d)}</strong> <span className="muted">· {DOC_LABEL[d.type]}</span>
                   <div className="muted" style={{ fontSize: ".85rem" }}>{clientName(clients, d.clientId)} · {fmtDate(d.date)}</div>
                 </div>
                 <div className="right">
