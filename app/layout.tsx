@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: "Clientes, presupuestos y facturas de Soto Instalaciones Integrales.",
   appleWebApp: { capable: true, title: "Soto", statusBarStyle: "default" },
 };
-export const viewport: Viewport = { themeColor: "#0f766e", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#0a2342", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
