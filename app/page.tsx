@@ -6,6 +6,7 @@ import { docNumber, fmtDate, money, totals } from "@/lib/format";
 import { DOC_LABEL } from "@/lib/types";
 import { NewDocButton, StatusBadge, isOverdue } from "@/components/DocBits";
 import { ReminderButtons } from "@/components/Reminder";
+import { Logo } from "@/components/Logo";
 import { daysOverdue } from "@/lib/reminder";
 
 const dayISO14 = () => { const d = new Date(); d.setDate(d.getDate() - 14); return d.toISOString().slice(0, 10); };
@@ -30,7 +31,7 @@ export default function Dashboard() {
   return (
     <div className="stack">
       <div>
-        <h1>Hola 👋</h1>
+        <h1 style={{ margin: "0 0 .35rem", lineHeight: 0 }}><Logo variant="wordmark" width={210} alt="SOTO" /></h1>
         <p className="muted" style={{ margin: 0 }}>Esto es lo que tienes pendiente.</p>
       </div>
 
