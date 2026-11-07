@@ -7,6 +7,7 @@ const P: Record<string, string> = {
   mic: "M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3",
   plus: "M12 5v14M5 12h14",
   tag: "M3 12V4h8l10 10-8 8zM7.5 8.5h.01",
+  pencil: "M4 20h4L19 9l-4-4L4 16zM13 7l4 4",
   trash: "M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14",
 };
 export function Icon({ name, size = 22 }: { name: keyof typeof P | string; size?: number }) {

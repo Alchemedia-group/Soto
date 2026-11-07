@@ -126,3 +126,15 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand); out
 .suggest li { display: flex; justify-content: space-between; gap: .8rem; align-items: center; min-height: 44px; padding: .4rem .7rem; border-radius: 8px; cursor: pointer; }
 .suggest li.on, .suggest li:hover { background: var(--brand-l); }
 .suggest small { font-weight: 400; }
+
+/* 6 phone tabs: shorter label and smaller type so they all fit */
+.tabbar .lbl-short { display: none; }
+@media (max-width: 760px) {
+  .tabbar a { font-size: .62rem; min-width: 0; }
+  .tabbar .lbl-full { display: none; }
+  .tabbar .lbl-short { display: inline; }
+}
+.note { background: var(--brand-l); border-radius: 12px; padding: .7rem .9rem; font-size: .9rem; }
+.group-h { display: flex; justify-content: space-between; align-items: baseline; padding: .9rem 0 .2rem; border-bottom: 2px solid var(--line); }
+.list button.item { background: none; border: 0; border-bottom: 1px solid var(--line); width: 100%; cursor: pointer; font: inherit; color: inherit; text-align: left; }
+.list > button.item:last-child { border-bottom: 0; }

@@ -17,19 +17,25 @@ export default function Catalogo() {
     .filter((c) => cat === "all" || c.category === cat)
     .filter((c) => !q || norm(c.name).includes(norm(q)))
     .sort((a, b) => a.name.localeCompare(b.name, "es"));
+  const groups = [...CATEGORIES, ""].map((g) => ({ name: g, items: rows.filter((r) => (CATEGORIES.includes(r.category) ? r.category : "") === g) })).filter((g) => g.items.length);
 
   return (
     <div className="stack">
       <div className="row between wrap">
         <div>
           <h1>Catálogo</h1>
-          <p className="muted" style={{ margin: 0 }}>Tus servicios y productos con su precio. Al escribirlos en un presupuesto o factura se rellenan solos.</p>
+          <p className="muted" style={{ margin: 0 }}>{catalog.length} {catalog.length === 1 ? "servicio o producto" : "servicios y productos"}. Al escribirlos en un presupuesto o factura se rellenan solos.</p>
         </div>
         <button className="btn primary" onClick={() => setEditing(addCatalogItem({ name: "Nuevo servicio", category: cat === "all" ? "" : cat }).id)}>
           <Icon name="plus" size={18} /> Nuevo
         </button>
       </div>
-      <input placeholder="Buscar…" value={q} onChange={(e) => setQ(e.target.value)} />
+
+      <div className="note">
+        <strong>Cambiar un precio solo afecta a lo nuevo.</strong> Los presupuestos y facturas que ya has creado conservan el precio con el que se hicieron; el nuevo precio se usa a partir del siguiente documento.
+      </div>
+
+      <input placeholder="Buscar…" aria-label="Buscar en el catálogo" value={q} onChange={(e) => setQ(e.target.value)} />
       <div className="chips">
         {["all", ...CATEGORIES].map((c) => (
           <button key={c} className={`chip ${cat === c ? "on" : ""}`} onClick={() => setCat(c)}>{c === "all" ? "Todos" : c}</button>
@@ -40,17 +46,30 @@ export default function Catalogo() {
         {rows.length === 0 ? (
           <div className="empty">{catalog.length ? "Sin resultados." : "Aún no hay nada. Añade servicios aquí o pulsa “Guardar en el catálogo” al escribirlos en un presupuesto."}</div>
         ) : (
-          <div className="list">
-            {rows.map((c) => (editing === c.id ? <Editor key={c.id} item={c} onDone={() => setEditing(null)} /> : (
-              <div key={c.id} className="item">
-                <button className="chip" style={{ border: 0, background: "none", textAlign: "left", flex: 1, color: "inherit", padding: 0, whiteSpace: "normal" }} onClick={() => setEditing(c.id)}>
-                  <strong>{c.name}</strong>
-                  <div className="muted" style={{ fontSize: ".85rem", fontWeight: 400 }}>{[c.category, `IVA ${c.vat}%`, c.uses ? `usado ${c.uses} ${c.uses === 1 ? "vez" : "veces"}` : ""].filter(Boolean).join(" · ")}</div>
-                </button>
-                <strong>{money(c.price)}{c.unit ? ` / ${c.unit}` : ""}</strong>
+          groups.map((g) => (
+            <section key={g.name || "none"}>
+              <div className="group-h"><h2>{g.name || "Sin clasificar"}</h2><span className="muted">{g.items.length}</span></div>
+              <div className="list">
+                {g.items.map((c) =>
+                  editing === c.id ? (
+                    <Editor key={c.id} item={c} onDone={() => setEditing(null)} />
+                  ) : (
+                    <button key={c.id} className="item" onClick={() => setEditing(c.id)} aria-label={`Editar ${c.name}`}
+                      style={{ font: "inherit", color: "inherit", textAlign: "left" }}>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <strong>{c.name}</strong>
+                        <span className="muted" style={{ display: "block", fontSize: ".85rem" }}>
+                          {[`IVA ${c.vat}%`, c.uses ? `usado ${c.uses} ${c.uses === 1 ? "vez" : "veces"}` : ""].filter(Boolean).join(" · ")}
+                        </span>
+                      </span>
+                      <strong>{money(c.price)}{c.unit ? ` / ${c.unit}` : ""}</strong>
+                      <span className="muted" aria-hidden><Icon name="pencil" size={18} /></span>
+                    </button>
+                  ),
+                )}
               </div>
-            )))}
-          </div>
+            </section>
+          ))
         )}
       </div>
     </div>
@@ -72,6 +91,7 @@ function Editor({ item, onDone }: { item: CatalogItem; onDone: () => void }) {
           <option value="">Sin clasificar</option>
           {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
         </select></div>
+      <div className="muted" style={{ fontSize: ".85rem" }}>Los cambios se aplican a los documentos nuevos. Los ya creados no cambian.</div>
       <div className="row between">
         <button className="btn danger sm" onClick={() => { if (confirm(`¿Quitar “${item.name}” del catálogo? Los documentos ya creados no cambian.`)) deleteCatalogItem(item.id); }}>Eliminar</button>
         <button className="btn primary sm" onClick={onDone}>Hecho</button>

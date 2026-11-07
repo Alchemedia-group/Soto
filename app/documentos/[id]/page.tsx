@@ -143,9 +143,16 @@ export default function Documento() {
                 const saved = findCatalogByName(l.description, catalog);
                 if (saved && saved.price === l.price && saved.vat === l.vat) return <div className="muted" style={{ fontSize: ".75rem", marginTop: 4 }}>✓ Guardado en el catálogo</div>;
                 return (
-                  <button type="button" className="btn sm" style={{ marginTop: 6 }} onClick={() => saveLineToCatalog(l)}>
-                    {saved ? "Actualizar precio en el catálogo" : "Guardar en el catálogo"}
-                  </button>
+                  <div className="row wrap" style={{ marginTop: 6 }}>
+                    <button type="button" className="btn sm" onClick={() => saveLineToCatalog(l)}>
+                      {saved ? "Actualizar el catálogo con este precio" : "Guardar en el catálogo"}
+                    </button>
+                    {saved && d.status === "draft" && (
+                      <button type="button" className="btn sm" onClick={() => setLine(l.id, { price: saved.price, vat: saved.vat })}>
+                        Usar el precio actual del catálogo ({money(saved.price)})
+                      </button>
+                    )}
+                  </div>
                 );
               })()}
             </div>
