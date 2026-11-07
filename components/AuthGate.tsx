@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { signIn, signUp } from "@/lib/sync";
+import { Logo } from "./Logo";
 
 export function LoginScreen() {
   const [mode, setMode] = useState<"in" | "up">("in");
@@ -25,10 +26,7 @@ export function LoginScreen() {
   return (
     <div style={{ minHeight: "100dvh", display: "grid", placeItems: "center", padding: "1rem" }}>
       <form className="card stack" style={{ width: "min(420px, 100%)" }} onSubmit={submit}>
-        <div className="doc-logo" style={{ margin: "0 auto" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.jpg" alt="Soto Instalaciones Integrales" />
-        </div>
+        <div style={{ textAlign: "center" }}><Logo width={240} /></div>
         <div>
           <h1>{mode === "in" ? "Entrar" : "Crear cuenta"}</h1>
           <p className="muted" style={{ margin: 0 }}>

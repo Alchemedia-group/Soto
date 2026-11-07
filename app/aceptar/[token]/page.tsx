@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { supabase, syncEnabled } from "@/lib/supabase";
 import { addDays, fmtDate, money, totals } from "@/lib/format";
 import type { Line } from "@/lib/types";
+import { Logo } from "@/components/Logo";
 
 type Quote = {
   number: string; date: string; status: string; lines: Omit<Line, "id">[]; irpf: number; notes: string; client_name: string | null;
@@ -50,8 +51,7 @@ export default function Aceptar() {
   return wrap(
     <>
       <div className="row between wrap" style={{ alignItems: "flex-start" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo-crop.jpg" alt={co.name ?? "Soto"} style={{ width: 200, height: "auto", background: "#fff", borderRadius: 6 }} />
+        <Logo width={200} alt={co.name ?? "Soto"} />
         <div className="right muted" style={{ fontSize: ".85rem" }}>
           <strong style={{ color: "var(--text)" }}>{co.name}</strong>
           {[co.nif && `NIF ${co.nif}`, ...(co.address ?? "").split("\n"), co.phone, co.email].filter(Boolean).map((l, i) => <div key={i}>{l}</div>)}

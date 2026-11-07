@@ -149,3 +149,12 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand); out
 .notices { position: fixed; z-index: 70; top: 0; left: 0; right: 0; display: flex; flex-direction: column; gap: .5rem; align-items: center; padding: .6rem 1rem; pointer-events: none; }
 .notice { pointer-events: auto; display: flex; gap: .6rem; align-items: center; background: var(--card); color: var(--text); border: 1px solid var(--brand); border-radius: 14px; padding: .55rem .6rem .55rem 1rem; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-width: min(560px, 100%); font-weight: 600; }
 .notice span { flex: 1; min-width: 0; }
+
+/* Logo: navy version on light themes, light version on dark themes (automatic or forced) */
+.logo-for-dark { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .logo-for-light { display: none; }
+  :root:not([data-theme="light"]) .logo-for-dark { display: inline-block; }
+}
+:root[data-theme="dark"] .logo-for-light { display: none; }
+:root[data-theme="dark"] .logo-for-dark { display: inline-block; }
