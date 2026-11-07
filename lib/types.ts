@@ -17,6 +17,19 @@ export type Line = {
   vat: number; // percent
 };
 
+export type CatalogItem = {
+  id: string;
+  name: string;
+  price: number; // unit price, IVA excluded
+  vat: number; // percent
+  unit: string; // "ud", "h", "m"...
+  category: string; // Fontanería, Clima, Electricidad, Fotovoltaica or ""
+  uses: number; // how often it has been added to a document (for ranking suggestions)
+  createdAt: string;
+};
+
+export const CATEGORIES = ["Fontanería", "Clima", "Electricidad", "Fotovoltaica"];
+
 export type DocType = "quote" | "invoice";
 export type DocStatus = "draft" | "sent" | "accepted" | "rejected" | "paid";
 

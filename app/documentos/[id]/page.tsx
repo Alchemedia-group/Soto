@@ -1,19 +1,20 @@
 "use client";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { addClient, blankLine, deleteDoc, quoteToInvoice, updateDoc, useStore } from "@/lib/store";
+import { addClient, blankLine, bumpCatalogUse, deleteDoc, findCatalogByName, quoteToInvoice, saveLineToCatalog, updateDoc, useStore } from "@/lib/store";
 import { fmtDate, money, phoneForWhatsApp, totals } from "@/lib/format";
 import { DOC_LABEL, STATUSES_BY_TYPE, STATUS_LABEL, type Line } from "@/lib/types";
 import { NumInput } from "@/components/NumInput";
 import { StatusBadge, isOverdue } from "@/components/DocBits";
 import { Icon } from "@/components/Icon";
 import { ReminderButtons } from "@/components/Reminder";
+import { LineDescription } from "@/components/LineDescription";
 
 const VATS = [21, 10, 4, 0];
 
 export default function Documento() {
   const { id } = useParams<{ id: string }>();
-  const { ready, docs, clients, settings } = useStore();
+  const { ready, docs, clients, settings, catalog } = useStore();
   const router = useRouter();
   if (!ready) return null;
   const d = docs.find((x) => x.id === id);
@@ -96,7 +97,23 @@ export default function Documento() {
         {d.lines.map((l) => (
           <div className="line" key={l.id}>
             <div className="desc"><label>Descripción</label>
-              <input value={l.description} placeholder="Ej. Instalación de caldera" onChange={(e) => setLine(l.id, { description: e.target.value })} /></div>
+              <LineDescription
+                value={l.description}
+                catalog={catalog}
+                onText={(t) => setLine(l.id, { description: t })}
+                onPick={(it) => { setLine(l.id, { description: it.name, price: it.price, vat: it.vat }); bumpCatalogUse(it.id); }}
+              />
+              {(() => {
+                if (!l.description.trim()) return null;
+                const saved = findCatalogByName(l.description, catalog);
+                if (saved && saved.price === l.price && saved.vat === l.vat) return <div className="muted" style={{ fontSize: ".75rem", marginTop: 4 }}>✓ Guardado en el catálogo</div>;
+                return (
+                  <button type="button" className="btn sm" style={{ marginTop: 6 }} onClick={() => saveLineToCatalog(l)}>
+                    {saved ? "Actualizar precio en el catálogo" : "Guardar en el catálogo"}
+                  </button>
+                );
+              })()}
+            </div>
             <div><label>Cant.</label><NumInput value={l.qty} onChange={(n) => setLine(l.id, { qty: n })} /></div>
             <div><label>Precio (sin IVA)</label><NumInput value={l.price} onChange={(n) => setLine(l.id, { price: n })} /></div>
             <div><label>IVA</label>

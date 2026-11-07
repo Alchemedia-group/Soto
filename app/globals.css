@@ -118,3 +118,10 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand); out
 .paper .sign { height: 70px; border-bottom: 1px solid #111; }
 @media print { .doc-band, .paper table thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 @media (max-width: 640px) { .doc-logo { width: 150px; height: 48px; } .doc-logo img { width: 191px; left: -20px; top: -26px; } }
+
+/* catalog autocomplete */
+.suggest { position: absolute; z-index: 25; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px; list-style: none;
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.2); max-height: 280px; overflow-y: auto; }
+.suggest li { display: flex; justify-content: space-between; gap: .8rem; align-items: center; min-height: 44px; padding: .4rem .7rem; border-radius: 8px; cursor: pointer; }
+.suggest li.on, .suggest li:hover { background: var(--brand-l); }
+.suggest small { font-weight: 400; }

@@ -2,27 +2,39 @@
 import { useSyncExternalStore } from "react";
 import {
   DEFAULT_SETTINGS,
+  type CatalogItem,
   type Client,
   type Doc,
   type DocType,
   type Line,
   type Settings,
 } from "./types";
-import { addDays, today } from "./format";
+import { addDays, norm, today } from "./format";
 
 export type State = {
   ready: boolean;
   clients: Client[];
   docs: Doc[];
+  catalog: CatalogItem[];
   settings: Settings;
 };
 
+export type Table = "clients" | "docs" | "catalog" | "settings";
+/** Emitted for every local edit so the sync layer can push it to the shared database. */
+export type Change = { table: Table; id: string; deleted?: boolean };
+
 const KEY = "soto:v1";
-const SERVER: State = { ready: false, clients: [], docs: [], settings: DEFAULT_SETTINGS };
+const SERVER: State = { ready: false, clients: [], docs: [], catalog: [], settings: DEFAULT_SETTINGS };
 const listeners = new Set<() => void>();
+const changeListeners = new Set<(c: Change) => void>();
 let state: State | null = null;
 
 const uid = () => crypto.randomUUID();
+const emit = (c: Change) => changeListeners.forEach((l) => l(c));
+export const onChange = (cb: (c: Change) => void) => {
+  changeListeners.add(cb);
+  return () => changeListeners.delete(cb);
+};
 
 function load(): State {
   try {
@@ -33,11 +45,12 @@ function load(): State {
         ready: true,
         clients: p.clients ?? [],
         docs: p.docs ?? [],
+        catalog: p.catalog ?? [],
         settings: { ...DEFAULT_SETTINGS, ...(p.settings ?? {}) },
       };
     }
   } catch {}
-  return { ready: true, clients: [], docs: [], settings: DEFAULT_SETTINGS };
+  return { ready: true, clients: [], docs: [], catalog: [], settings: DEFAULT_SETTINGS };
 }
 
 function get(): State {
@@ -47,8 +60,8 @@ function get(): State {
 
 function persist() {
   try {
-    const { clients, docs, settings } = get();
-    localStorage.setItem(KEY, JSON.stringify({ clients, docs, settings }));
+    const { clients, docs, catalog, settings } = get();
+    localStorage.setItem(KEY, JSON.stringify({ clients, docs, catalog, settings }));
   } catch {}
 }
 
@@ -78,6 +91,39 @@ export const getState = get;
 
 export const useStore = () => useSyncExternalStore(subscribe, get, () => SERVER);
 
+// ---------- Remote merge (used by sync; does not emit changes) ----------
+export function applyRemote(p: {
+  clients?: Client[];
+  docs?: Doc[];
+  catalog?: CatalogItem[];
+  settings?: Settings;
+  removed?: { table: Exclude<Table, "settings">; id: string }[];
+}) {
+  const cur = get();
+  const merge = <T extends { id: string }>(list: T[], incoming: T[] | undefined, removed: Set<string>) => {
+    if (!incoming?.length && !removed.size) return list;
+    const map = new Map(list.map((x) => [x.id, x]));
+    removed.forEach((id) => map.delete(id));
+    incoming?.forEach((x) => map.set(x.id, x));
+    // keep newest-first order like locally created items
+    return [...map.values()].sort((a, b) =>
+      String((b as { createdAt?: string }).createdAt ?? "").localeCompare(String((a as { createdAt?: string }).createdAt ?? "")),
+    );
+  };
+  const rm = (t: string) => new Set((p.removed ?? []).filter((r) => r.table === t).map((r) => r.id));
+  commit({
+    clients: merge(cur.clients, p.clients, rm("clients")),
+    docs: merge(cur.docs, p.docs, rm("docs")),
+    catalog: merge(cur.catalog, p.catalog, rm("catalog")),
+    settings: p.settings ? { ...DEFAULT_SETTINGS, ...p.settings } : cur.settings,
+  });
+}
+
+/** Wipe local data (used when a different account signs in or on sign-out). */
+export function resetLocal() {
+  commit({ clients: [], docs: [], catalog: [], settings: DEFAULT_SETTINGS });
+}
+
 // ---------- Clients ----------
 export function addClient(data: Partial<Omit<Client, "id" | "createdAt">> & { name: string }): Client {
   const c: Client = {
@@ -91,15 +137,67 @@ export function addClient(data: Partial<Omit<Client, "id" | "createdAt">> & { na
     createdAt: new Date().toISOString(),
   };
   commit({ clients: [c, ...get().clients] });
+  emit({ table: "clients", id: c.id });
   return c;
 }
 
 export function updateClient(id: string, patch: Partial<Client>) {
   commit({ clients: get().clients.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
+  emit({ table: "clients", id });
 }
 
 export function deleteClient(id: string) {
   commit({ clients: get().clients.filter((c) => c.id !== id) });
+  emit({ table: "clients", id, deleted: true });
+}
+
+// ---------- Catalog (saved services / products) ----------
+export function addCatalogItem(data: Partial<Omit<CatalogItem, "id" | "createdAt">> & { name: string }): CatalogItem {
+  const it: CatalogItem = {
+    price: 0,
+    vat: get().settings.defaultVat,
+    unit: "",
+    category: "",
+    uses: 0,
+    ...data,
+    id: uid(),
+    createdAt: new Date().toISOString(),
+  };
+  commit({ catalog: [it, ...get().catalog] });
+  emit({ table: "catalog", id: it.id });
+  return it;
+}
+
+export function updateCatalogItem(id: string, patch: Partial<CatalogItem>) {
+  commit({ catalog: get().catalog.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
+  emit({ table: "catalog", id });
+}
+
+export function deleteCatalogItem(id: string) {
+  commit({ catalog: get().catalog.filter((c) => c.id !== id) });
+  emit({ table: "catalog", id, deleted: true });
+}
+
+export const findCatalogByName = (name: string, catalog = get().catalog) => {
+  const n = norm(name);
+  return n ? catalog.find((c) => norm(c.name) === n) : undefined;
+};
+
+/** Save a document line into the catalog (or update the price/IVA of the one with the same name). */
+export function saveLineToCatalog(line: Pick<Line, "description" | "price" | "vat">): CatalogItem | null {
+  const name = line.description.trim();
+  if (!name) return null;
+  const existing = findCatalogByName(name);
+  if (existing) {
+    updateCatalogItem(existing.id, { price: line.price, vat: line.vat });
+    return { ...existing, price: line.price, vat: line.vat };
+  }
+  return addCatalogItem({ name, price: line.price, vat: line.vat });
+}
+
+export function bumpCatalogUse(id: string) {
+  const it = get().catalog.find((c) => c.id === id);
+  if (it) updateCatalogItem(id, { uses: it.uses + 1 });
 }
 
 // ---------- Documents ----------
@@ -127,7 +225,12 @@ export const blankLine = (vat = get().settings.defaultVat): Line => ({
 
 export function createDoc(
   type: DocType,
-  opts: { clientId?: string; lines?: Omit<Line, "id" | "vat">[]; notes?: string; fromQuoteId?: string } = {},
+  opts: {
+    clientId?: string;
+    lines?: { description: string; qty: number; price: number; vat?: number }[];
+    notes?: string;
+    fromQuoteId?: string;
+  } = {},
 ): Doc {
   const { settings, docs } = get();
   const d: Doc = {
@@ -138,7 +241,7 @@ export function createDoc(
     date: today(),
     dueDate: type === "invoice" ? addDays(today(), settings.paymentDays) : "",
     lines: opts.lines?.length
-      ? opts.lines.map((l) => ({ ...l, id: uid(), vat: settings.defaultVat }))
+      ? opts.lines.map((l) => ({ ...l, id: uid(), vat: l.vat ?? settings.defaultVat }))
       : [blankLine()],
     irpf: settings.defaultIrpf,
     status: "draft",
@@ -147,15 +250,18 @@ export function createDoc(
     createdAt: new Date().toISOString(),
   };
   commit({ docs: [d, ...docs] });
+  emit({ table: "docs", id: d.id });
   return d;
 }
 
 export function updateDoc(id: string, patch: Partial<Doc>) {
   commit({ docs: get().docs.map((d) => (d.id === id ? { ...d, ...patch } : d)) });
+  emit({ table: "docs", id });
 }
 
 export function deleteDoc(id: string) {
   commit({ docs: get().docs.filter((d) => d.id !== id) });
+  emit({ table: "docs", id, deleted: true });
 }
 
 export function quoteToInvoice(quoteId: string): Doc | null {
@@ -175,17 +281,27 @@ export function quoteToInvoice(quoteId: string): Doc | null {
 // ---------- Settings & backup ----------
 export function updateSettings(patch: Partial<Settings>) {
   commit({ settings: { ...get().settings, ...patch } });
+  emit({ table: "settings", id: "me" });
 }
 
 export function exportData() {
-  const { clients, docs, settings } = get();
-  return JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), clients, docs, settings }, null, 2);
+  const { clients, docs, catalog, settings } = get();
+  return JSON.stringify({ version: 2, exportedAt: new Date().toISOString(), clients, docs, catalog, settings }, null, 2);
 }
 
 export function importData(json: string) {
   const p = JSON.parse(json);
   if (!Array.isArray(p.clients) || !Array.isArray(p.docs)) throw new Error("Archivo no válido");
-  commit({ clients: p.clients, docs: p.docs, settings: { ...DEFAULT_SETTINGS, ...(p.settings ?? {}) } });
+  commit({
+    clients: p.clients,
+    docs: p.docs,
+    catalog: p.catalog ?? [],
+    settings: { ...DEFAULT_SETTINGS, ...(p.settings ?? {}) },
+  });
+  p.clients.forEach((c: Client) => emit({ table: "clients", id: c.id }));
+  p.docs.forEach((d: Doc) => emit({ table: "docs", id: d.id }));
+  (p.catalog ?? []).forEach((c: CatalogItem) => emit({ table: "catalog", id: c.id }));
+  emit({ table: "settings", id: "me" });
 }
 
 // ---------- Helpers ----------

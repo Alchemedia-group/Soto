@@ -5,13 +5,16 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "./Icon";
 import { Voice } from "./Voice";
 import { useStore } from "@/lib/store";
+import { startSync, useSync } from "@/lib/sync";
+import { LoginScreen } from "./AuthGate";
 
 const NAV = [
-  { href: "/", label: "Inicio", icon: "home" },
-  { href: "/clientes", label: "Clientes", icon: "users" },
-  { href: "/presupuestos", label: "Presupuestos", icon: "quote" },
-  { href: "/facturas", label: "Facturas", icon: "invoice" },
-  { href: "/ajustes", label: "Ajustes", icon: "cog" },
+  { href: "/", label: "Inicio", icon: "home", phone: true },
+  { href: "/clientes", label: "Clientes", icon: "users", phone: true },
+  { href: "/presupuestos", label: "Presupuestos", icon: "quote", phone: true },
+  { href: "/facturas", label: "Facturas", icon: "invoice", phone: true },
+  { href: "/catalogo", label: "Catálogo", icon: "tag", phone: false }, // on phones: reachable from Ajustes
+  { href: "/ajustes", label: "Ajustes", icon: "cog", phone: true },
 ];
 
 export function Shell({ children }: { children: React.ReactNode }) {
@@ -36,12 +39,22 @@ export function Shell({ children }: { children: React.ReactNode }) {
   useEffect(() => setHidden(false), [path]);
 
   const on = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
-  const links = NAV.map((n) => (
-    <Link key={n.href} href={n.href} className={on(n.href) ? "on" : ""}>
-      <Icon name={n.icon} size={20} />
-      <span>{n.label}</span>
-    </Link>
-  ));
+  const mk = (items: typeof NAV) =>
+    items.map((n) => (
+      <Link key={n.href} href={n.href} className={on(n.href) ? "on" : ""}>
+        <Icon name={n.icon} size={20} />
+        <span>{n.label}</span>
+      </Link>
+    ));
+  const sync = useSync();
+  useEffect(() => { startSync(); }, []);
+  if (sync.enabled && !sync.ready) return null; // checking session
+  if (sync.enabled && !sync.signedIn) return <LoginScreen />;
+  const syncLabel =
+    sync.status === "offline" ? "Sin conexión · se subirá al volver"
+    : sync.status === "error" ? "Error de sincronización"
+    : sync.status === "syncing" || sync.pending ? "Sincronizando…"
+    : sync.enabled ? "Sincronizado" : "Solo en este dispositivo";
   return (
     <div className={`shell ${hidden ? "nav-hidden" : ""}`}>
       <aside className="side">
@@ -49,10 +62,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
           {settings.companyName}
           <small>Gestión</small>
         </div>
-        <nav className="nav">{links}</nav>
+        <nav className="nav">{mk(NAV)}</nav>
+        <div className="muted" style={{ fontSize: ".75rem", padding: "1rem .7rem 0" }}>{syncLabel}</div>
       </aside>
       <main className="main">{children}</main>
-      <nav className="tabbar">{links}</nav>
+      <nav className="tabbar">{mk(NAV.filter((n) => n.phone))}</nav>
       <Voice />
     </div>
   );

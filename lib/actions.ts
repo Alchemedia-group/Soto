@@ -1,5 +1,6 @@
 "use client";
-import { addClient, createDoc, quoteToInvoice, updateDoc, type State } from "./store";
+import { addClient, bumpCatalogUse, createDoc, quoteToInvoice, updateDoc, type State } from "./store";
+import { searchCatalog } from "./catalog";
 import { totals, norm } from "./format";
 import { STATUSES_BY_TYPE, STATUS_LABEL, type DocStatus, type DocType } from "./types";
 
@@ -23,6 +24,7 @@ export function buildContext(s: State) {
     defaultVat: s.settings.defaultVat,
     clients: s.clients.slice(0, 200).map((c) => c.name),
     documents: docs,
+    catalog: s.catalog.slice(0, 150).map((c) => ({ name: c.name, price: c.price, vat: c.vat, unit: c.unit })),
     pendingToCollect: unpaid.reduce((sum, d) => sum + totals(d).total, 0),
   };
 }
@@ -77,7 +79,16 @@ export function runAction(a: Action, getState: () => State): ActionResult {
       if (!client && cname) client = addClient({ name: cname });
       const lines = (Array.isArray(i.lines) ? i.lines : [])
         .map((l) => l as Record<string, unknown>)
-        .map((l) => ({ description: str(l.description), qty: num(l.qty, 1), price: num(l.price) }))
+        .map((l) => {
+          const description = str(l.description);
+          const hasPrice = typeof l.price === "number" && isFinite(l.price) && l.price > 0;
+          // No price given: look the item up in the saved catalog (price + IVA come with it).
+          const hit = !hasPrice && description ? searchCatalog(s.catalog, description, 1)[0] : undefined;
+          if (hit) bumpCatalogUse(hit.id);
+          return hit
+            ? { description: hit.name, qty: num(l.qty, 1), price: hit.price, vat: hit.vat }
+            : { description, qty: num(l.qty, 1), price: num(l.price) };
+        })
         .filter((l) => l.description);
       const d = createDoc(type, { clientId: client?.id, lines, notes: str(i.notes) });
       return {

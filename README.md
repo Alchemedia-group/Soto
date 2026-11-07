@@ -23,14 +23,31 @@ npm run dev                  # http://localhost:3000
   Sin `ANTHROPIC_API_KEY` solo entiende órdenes simples ("abre facturas", "nuevo cliente Ana").
 - Instalable en el móvil (Añadir a pantalla de inicio).
 
+## Catálogo de servicios y productos
+
+Guarda tus servicios con precio e IVA (Ajustes → Catálogo, o el botón "Guardar en el catálogo" en cualquier línea de un
+presupuesto/factura). Al escribir en una línea aparecen sugerencias; al elegir una se rellenan precio e IVA y solo hay que
+poner la cantidad. El asistente de voz también las usa ("presupuesto para Casa García: cambio de caldera").
+
+## Datos compartidos entre móvil y ordenador
+
+Los datos viven en Supabase (proyecto `soto-instalaciones`, esquema en `supabase/migrations/`) y se sincronizan al editar,
+al volver a abrir la app y en tiempo real. Cada cambio se guarda primero en el dispositivo, así que funciona sin conexión y
+se sube al recuperarla. Hace falta iniciar sesión (email + contraseña); cada cuenta solo ve sus datos.
+
+Configura `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en `.env.local` (ver `.env.example`).
+Sin ellas la app funciona en modo local.
+
+En el panel de Supabase (Authentication → Sign In / Providers → Email) decide si exiges confirmar el email al registrarte y,
+cuando hayas creado tu cuenta, desactiva los registros nuevos ("Allow new users to sign up").
+
 ## Limitaciones actuales
 
-- **Los datos se guardan en el navegador del dispositivo** (`localStorage`). No se sincronizan entre móvil y ordenador:
-  usa Ajustes → Copia de seguridad. Siguiente paso natural: base de datos en la nube (p. ej. Supabase) + login.
+- Si dos dispositivos crean un documento sin conexión a la vez pueden repetir el número (p. ej. dos `F-2026-0005`); revísalo si pasa.
 - Dictado por voz: Chrome/Edge/Safari; Firefox no lo soporta (se puede escribir la orden).
 - Las facturas no cumplen aún Verifactu / factura electrónica; revisar con el gestor antes de usar en producción.
 
 ## Estructura
 
-`lib/store.ts` datos · `lib/actions.ts` acciones del asistente · `lib/assistant-tools.ts` herramientas de Claude ·
+`lib/store.ts` datos · `lib/sync.ts` sincronización con Supabase · `lib/catalog.ts` sugerencias · `lib/actions.ts` acciones del asistente · `lib/assistant-tools.ts` herramientas de Claude ·
 `app/documentos/[id]` editor · `components/Voice.tsx` micrófono.

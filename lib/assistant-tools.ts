@@ -32,9 +32,13 @@ export const TOOLS = [
             properties: {
               description: { type: "string" },
               qty: { type: "number" },
-              price: { type: "number", description: "Precio unitario sin IVA, en euros" },
+              price: {
+                type: "number",
+                description:
+                  "Precio unitario sin IVA, en euros. OMÍTELO si el usuario no lo dice y el concepto coincide con un artículo del catálogo: se rellenará solo.",
+              },
             },
-            required: ["description", "qty", "price"],
+            required: ["description", "qty"],
           },
         },
         notes: { type: "string" },
@@ -81,6 +85,7 @@ Reglas:
 - Responde SIEMPRE en español, en una o dos frases cortas, pensadas para ser leídas en voz alta. Nada de markdown ni listas.
 - Para crear/modificar datos usa las herramientas. Puedes llamar a varias a la vez.
 - Los documentos se crean como BORRADOR; nunca digas que se han enviado.
+- El contexto incluye el "catalog" (servicios/productos guardados con su precio). Si el usuario nombra uno, usa el nombre del catálogo y no inventes el precio.
 - Si falta un dato imprescindible (por ejemplo el cliente o el importe), pregunta en vez de inventarlo.
 - Para preguntas sobre el negocio (cuánto me deben, qué presupuestos están pendientes...) responde con los datos del contexto; no inventes cifras.
 - Los importes hablados como "mil doscientos euros" son 1200. Interpreta "más IVA" como precio sin IVA.`;
