@@ -31,7 +31,7 @@ export default function Dashboard() {
     <div className="stack">
       <div>
         <h1>Hola 👋</h1>
-        <p className="muted" style={{ margin: 0 }}>Pulsa el micrófono y dime qué necesitas.</p>
+        <p className="muted" style={{ margin: 0 }}>Esto es lo que tienes pendiente.</p>
       </div>
 
       <div className="grid g3">
@@ -111,7 +111,7 @@ export default function Dashboard() {
       <div className="card">
         <h2>Últimos documentos</h2>
         {recent.length === 0 ? (
-          <div className="empty">Aún no hay nada. Crea tu primer presupuesto o dícteselo al asistente.</div>
+          <div className="empty">Aún no hay nada. Crea tu primer presupuesto.</div>
         ) : (
           <div className="list">
             {recent.map((d) => (

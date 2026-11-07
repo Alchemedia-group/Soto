@@ -3,7 +3,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "./Icon";
-import { Voice } from "./Voice";
 import { useStore } from "@/lib/store";
 import { dismissNotice, startSync, useSync } from "@/lib/sync";
 import { LoginScreen } from "./AuthGate";
@@ -88,7 +87,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
       )}
       <nav className="tabbar">{mk(NAV.filter((n) => n.phone), true)}</nav>
-      <Voice />
     </div>
   );
 }

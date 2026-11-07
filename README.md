@@ -1,13 +1,12 @@
 # Soto Instalaciones Integrales — gestión
 
-Web app instalable (PWA) para gestionar **clientes, presupuestos y facturas**, pensada para usar desde el móvil,
-con un **asistente de voz** ("Haz un presupuesto para Casa García: cambiar caldera, 1200 euros").
+Web app instalable (PWA) para gestionar **clientes, presupuestos y facturas**, pensada para usar desde el móvil.
 
 ## Arrancar
 
 ```bash
 npm install
-cp .env.example .env.local   # añade ANTHROPIC_API_KEY para el asistente de voz
+cp .env.example .env.local   # opcional: claves de la base de datos compartida (Supabase)
 npm run dev                  # http://localhost:3000
 ```
 
@@ -21,8 +20,6 @@ npm run dev                  # http://localhost:3000
 - Recordatorios de pago por email o WhatsApp (abren tu app de correo/WhatsApp con el texto preparado y guardan la fecha del último recordatorio). No se envían desde un servidor.
 - **Aceptación por enlace**: en un presupuesto, "Crear enlace de aceptación" genera un enlace secreto; el cliente lo abre en su móvil (sin cuenta), ve el presupuesto y pulsa Aceptar o Rechazar. El estado se actualiza solo en todos tus dispositivos, con aviso en la app, nombre, fecha y comentario del cliente. El enlace también va en el PDF y en los mensajes de WhatsApp/email. Se puede desactivar en cualquier momento. Necesita que la app esté publicada en internet (define `NEXT_PUBLIC_APP_URL`). Detalles de seguridad en `supabase/migrations/20261107_quote_acceptance_links.sql`.
 - Presupuesto aceptado → "Crear factura" (banner en el presupuesto y en Inicio); la factura copia conceptos, IVA y cliente y queda enlazada.
-- Asistente de voz: dictado del navegador (es-ES) + Claude (`app/api/assistant`) que convierte la orden en acciones.
-  Sin `ANTHROPIC_API_KEY` solo entiende órdenes simples ("abre facturas", "nuevo cliente Ana").
 - Instalable en el móvil (Añadir a pantalla de inicio).
 - Modo claro / oscuro / automático (Ajustes → Apariencia; se guarda en cada dispositivo).
 - Bizum e IBAN como formas de pago en facturas y recordatorios.
@@ -31,7 +28,7 @@ npm run dev                  # http://localhost:3000
 
 Guarda tus servicios con precio e IVA (Ajustes → Catálogo, o el botón "Guardar en el catálogo" en cualquier línea de un
 presupuesto/factura). Al escribir en una línea aparecen sugerencias; al elegir una se rellenan precio e IVA y solo hay que
-poner la cantidad. El asistente de voz también las usa ("presupuesto para Casa García: cambio de caldera").
+poner la cantidad.
 
 ## Datos compartidos entre móvil y ordenador
 
@@ -48,10 +45,9 @@ cuando hayas creado tu cuenta, desactiva los registros nuevos ("Allow new users 
 ## Limitaciones actuales
 
 - Si dos dispositivos crean un documento sin conexión a la vez pueden repetir el número (p. ej. dos `F-2026-0005`); revísalo si pasa.
-- Dictado por voz: Chrome/Edge/Safari; Firefox no lo soporta (se puede escribir la orden).
 - Las facturas no cumplen aún Verifactu / factura electrónica; revisar con el gestor antes de usar en producción.
 
 ## Estructura
 
-`lib/store.ts` datos · `lib/sync.ts` sincronización con Supabase · `lib/catalog.ts` sugerencias · `lib/actions.ts` acciones del asistente · `lib/assistant-tools.ts` herramientas de Claude ·
-`app/documentos/[id]` editor · `components/Voice.tsx` micrófono.
+`lib/store.ts` datos · `lib/sync.ts` sincronización con Supabase · `lib/catalog.ts` sugerencias ·
+`app/documentos/[id]` editor.
