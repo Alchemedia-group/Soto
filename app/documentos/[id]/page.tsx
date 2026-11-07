@@ -10,6 +10,8 @@ import { StatusBadge, isOverdue } from "@/components/DocBits";
 import { Icon } from "@/components/Icon";
 import { ReminderButtons } from "@/components/Reminder";
 import { PdfButtons } from "@/components/PdfButtons";
+import { ShareQuote } from "@/components/ShareQuote";
+import { quoteLink } from "@/lib/share";
 import { LineDescription } from "@/components/LineDescription";
 
 const VATS = [21, 10, 4, 0];
@@ -35,7 +37,8 @@ export default function Documento() {
   const isCancelled = d.status === "cancelled";
   const fromQuoteDoc = d.fromQuoteId ? docs.find((x) => x.id === d.fromQuoteId) : undefined;
 
-  const msg = `Hola${client ? " " + client.name : ""}, te envío ${d.type === "quote" ? "el presupuesto" : "la factura"} ${d.number} de ${settings.companyName} por importe de ${money(t.total)}.`;
+  const acceptUrl = d.type === "quote" && d.shareToken ? quoteLink(d.shareToken) : "";
+  const msg = `Hola${client ? " " + client.name : ""}, te envío ${d.type === "quote" ? "el presupuesto" : "la factura"} ${d.number} de ${settings.companyName} por importe de ${money(t.total)}.${acceptUrl ? ` Puedes revisarlo y aceptarlo aquí: ${acceptUrl}` : ""}`;
   const wa = `https://wa.me/${phoneForWhatsApp(client?.phone ?? "")}?text=${encodeURIComponent(msg)}`;
   const mail = `mailto:${client?.email ?? ""}?subject=${encodeURIComponent(`${label} ${d.number} – ${settings.companyName}`)}&body=${encodeURIComponent(msg)}`;
 
@@ -50,12 +53,14 @@ export default function Documento() {
           </div>
         </div>
         <div className="row wrap">
-          <PdfButtons doc={d} client={client} settings={settings} text={msg} />
+          <PdfButtons doc={d} client={client} settings={settings} text={msg} acceptUrl={acceptUrl} />
           <Link className="btn" href={`/documentos/${d.id}/imprimir`}>Vista previa / Imprimir</Link>
           <a className="btn" href={wa} target="_blank" rel="noreferrer">WhatsApp</a>
           {client?.email && <a className="btn" href={mail}>Email</a>}
         </div>
       </div>
+
+      {d.type === "quote" && !isCancelled && <ShareQuote doc={d} client={client} settings={settings} />}
 
       {isCancelled && (
         <div className="card" style={{ borderColor: "var(--danger)" }}>

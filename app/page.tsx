@@ -8,6 +8,8 @@ import { NewDocButton, StatusBadge, isOverdue } from "@/components/DocBits";
 import { ReminderButtons } from "@/components/Reminder";
 import { daysOverdue } from "@/lib/reminder";
 
+const dayISO14 = () => { const d = new Date(); d.setDate(d.getDate() - 14); return d.toISOString().slice(0, 10); };
+
 export default function Dashboard() {
   const { ready, docs, clients, settings } = useStore();
   const router = useRouter();
@@ -21,6 +23,8 @@ export default function Dashboard() {
   const monthBilled = invoices.filter((d) => d.status !== "draft" && d.status !== "cancelled" && d.date.startsWith(month));
   const openQuotes = docs.filter((d) => d.type === "quote" && d.status === "sent");
   const recent = docs.slice(0, 6);
+  const since = dayISO14();
+  const answers = docs.filter((q) => q.type === "quote" && q.response && q.response.at.slice(0, 10) >= since).sort((a, b) => b.response!.at.localeCompare(a.response!.at)).slice(0, 5);
   const toInvoice = docs.filter((q) => q.type === "quote" && q.status === "accepted" && !docs.some((i) => i.fromQuoteId === q.id && i.status !== "cancelled"));
 
   return (
@@ -61,6 +65,23 @@ export default function Dashboard() {
                   <button className="btn primary sm" onClick={() => router.push(`/documentos/${quoteToInvoice(q.id)!.id}`)}>Crear factura</button>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {answers.length > 0 && (
+        <div className="card">
+          <h2>Respuestas de clientes</h2>
+          <div className="list">
+            {answers.map((q) => (
+              <Link key={q.id} href={`/documentos/${q.id}`}>
+                <span>
+                  <strong>{clientName(clients, q.clientId)}</strong> <span className="muted">· {docNumber(q)}</span>
+                  <div className="muted" style={{ fontSize: ".85rem" }}>{q.response!.comment ? `“${q.response!.comment}” · ` : ""}{fmtDate(q.response!.at.slice(0, 10))}</div>
+                </span>
+                <span className={`badge b-${q.status}`}>{q.response!.decision === "accepted" ? "Aceptó" : "Rechazó"}</span>
+              </Link>
             ))}
           </div>
         </div>

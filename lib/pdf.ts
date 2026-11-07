@@ -33,7 +33,7 @@ export function pdfFilename(d: Doc, client?: Client) {
     .trim();
 }
 
-export async function makePdf(d: Doc, client: Client | undefined, s: Settings, logoDataUrl?: string): Promise<jsPDF> {
+export async function makePdf(d: Doc, client: Client | undefined, s: Settings, logoDataUrl?: string, acceptUrl?: string): Promise<jsPDF> {
   const { jsPDF: PDF } = await import("jspdf");
   const doc = new PDF({ unit: "mm", format: "a4", compress: true });
   const isInvoice = d.type === "invoice";
@@ -134,6 +134,13 @@ export async function makePdf(d: Doc, client: Client | undefined, s: Settings, l
     stroke(INK, 0.3); doc.line(W - M - 70, y + 22, W - M, y + 22);
     label("Aceptado por el cliente · firma y fecha", W - M - 70, y + 26.5);
     y += 34;
+    if (acceptUrl) {
+      if (y + 8 > H - 22) { doc.addPage(); y = M; }
+      text("Acepta este presupuesto online:", M, y, { size: 8.3, color: MUTED });
+      doc.setFont("helvetica", "bold"); doc.setFontSize(8); col(NAVY);
+      doc.textWithLink(acceptUrl, M, y + 4.2, { url: acceptUrl });
+      y += 10;
+    }
   }
   if (d.notes.trim()) {
     doc.setFont("helvetica", "normal"); doc.setFontSize(8.8);

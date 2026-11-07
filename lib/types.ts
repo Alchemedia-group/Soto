@@ -48,6 +48,10 @@ export type Doc = {
   lastReminder?: string; // yyyy-mm-dd of the last payment reminder sent
   /** Set when an invoice is cancelled. If `released`, `number` is "" and the old number is free for the next invoice. */
   cancelled?: { at: string; formerNumber: string; released: boolean };
+  /** Secret part of the public link where the client can accept/reject a quote. Removing it kills the link. */
+  shareToken?: string;
+  /** The client's answer through that link (written by the server, never by this app). */
+  response?: { decision: "accepted" | "rejected"; name: string; comment: string; at: string };
   createdAt: string;
 };
 

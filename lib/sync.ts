@@ -18,7 +18,10 @@ export type SyncState = {
   lastSync: string; // ISO
   pending: number;
   error: string;
+  /** Things that happened while the app was open (e.g. a client accepted a quote). */
+  notices: Notice[];
 };
+export type Notice = { id: string; text: string; docId: string };
 
 let snap: SyncState = {
   ready: !syncEnabled,
@@ -29,6 +32,7 @@ let snap: SyncState = {
   lastSync: "",
   pending: 0,
   error: "",
+  notices: [],
 };
 const subs = new Set<() => void>();
 const set = (p: Partial<SyncState>) => {
@@ -53,12 +57,13 @@ const fromClient = (c: Client): Row => ({
 const toDoc = (r: Row): Doc => ({
   id: r.id, type: r.type, number: r.number, clientId: r.client_id ?? "", date: r.date, dueDate: r.due_date ?? "",
   lines: r.lines ?? [], irpf: Number(r.irpf) || 0, status: r.status, notes: r.notes,
-  fromQuoteId: r.from_quote_id ?? undefined, lastReminder: r.last_reminder ?? undefined, cancelled: r.cancelled ?? undefined, createdAt: r.created_at,
+  fromQuoteId: r.from_quote_id ?? undefined, lastReminder: r.last_reminder ?? undefined, cancelled: r.cancelled ?? undefined, shareToken: r.share_token ?? undefined, response: r.response ?? undefined, createdAt: r.created_at,
 });
 const fromDoc = (d: Doc): Row => ({
   id: d.id, type: d.type, number: d.number, client_id: d.clientId || null, date: d.date, due_date: d.dueDate || null,
   lines: d.lines, irpf: d.irpf, status: d.status, notes: d.notes, from_quote_id: d.fromQuoteId ?? null,
-  last_reminder: d.lastReminder ?? null, cancelled: d.cancelled ?? null, created_at: d.createdAt, deleted_at: null,
+  last_reminder: d.lastReminder ?? null, cancelled: d.cancelled ?? null, share_token: d.shareToken ?? null, created_at: d.createdAt, deleted_at: null,
+  // `response` is written only by the server (the client's answer), so it is never sent from here.
 });
 const toItem = (r: Row): CatalogItem => ({
   id: r.id, name: r.name, price: Number(r.price) || 0, vat: Number(r.vat) || 0, unit: r.unit, category: r.category,
@@ -188,6 +193,16 @@ export async function pull() {
       out.settings = s.data as Settings;
       lsSet(sinceKey("settings"), s.updated_at);
     }
+    // A client answered a quote while the app was open: tell the owner (only for documents already known on this device).
+    const known = getState();
+    for (const dd of out.docs ?? []) {
+      const old = known.docs.find((x) => x.id === dd.id);
+      const key = dd.id + ":" + dd.response?.at;
+      if (old && dd.response && dd.response.at !== old.response?.at && !wasNotified(key)) {
+        const who = [...(out.clients ?? []), ...known.clients].find((c) => c.id === dd.clientId)?.name || dd.response.name || "Un cliente";
+        addNotice({ id: key, docId: dd.id, text: `${who} ha ${dd.response.decision === "accepted" ? "aceptado" : "rechazado"} el presupuesto ${dd.number}` });
+      }
+    }
     applyRemote(out);
     set({ status: dirty.size ? snap.status : "idle", lastSync: new Date().toISOString(), error: "" });
   } catch (e) {
@@ -196,6 +211,14 @@ export async function pull() {
     pulling = false;
   }
 }
+
+// ---------- notices ----------
+const wasNotified = (k: string) => { try { return (JSON.parse(lsGet("soto:notified") ?? "[]") as string[]).includes(k); } catch { return false; } };
+function addNotice(n: Notice) {
+  try { lsSet("soto:notified", JSON.stringify([...(JSON.parse(lsGet("soto:notified") ?? "[]") as string[]), n.id].slice(-200))); } catch {}
+  set({ notices: [...snap.notices, n] });
+}
+export const dismissNotice = (id: string) => set({ notices: snap.notices.filter((n) => n.id !== id) });
 
 // ---------- lifecycle ----------
 let started = false;

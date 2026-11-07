@@ -4,7 +4,7 @@ import { canShare, downloadFile, pdfFile, shareFile } from "@/lib/pdf-client";
 import type { Client, Doc, Settings } from "@/lib/types";
 
 /** "Descargar PDF" (a real .pdf file) plus "Compartir" where the device has a share sheet (phones). */
-export function PdfButtons({ doc, client, settings, text }: { doc: Doc; client?: Client; settings: Settings; text: string }) {
+export function PdfButtons({ doc, client, settings, text, acceptUrl }: { doc: Doc; client?: Client; settings: Settings; text: string; acceptUrl?: string }) {
   const [busy, setBusy] = useState<"" | "dl" | "share">("");
   const [msg, setMsg] = useState("");
   const [share, setShare] = useState(false);
@@ -14,7 +14,7 @@ export function PdfButtons({ doc, client, settings, text }: { doc: Doc; client?:
     setBusy(kind);
     setMsg("");
     try {
-      const f = await pdfFile(doc, client, settings);
+      const f = await pdfFile(doc, client, settings, acceptUrl);
       if (kind === "share") {
         if (!(await shareFile(f, text))) {
           downloadFile(f);

@@ -17,8 +17,8 @@ async function loadLogo(): Promise<string | undefined> {
 }
 
 /** Builds the PDF as a File, ready to download or share. */
-export async function pdfFile(d: Doc, client: Client | undefined, s: Settings): Promise<File> {
-  const doc = await makePdf(d, client, s, await loadLogo());
+export async function pdfFile(d: Doc, client: Client | undefined, s: Settings, acceptUrl?: string): Promise<File> {
+  const doc = await makePdf(d, client, s, await loadLogo(), acceptUrl);
   return new File([doc.output("blob")], pdfFilename(d, client), { type: "application/pdf" });
 }
 

@@ -19,6 +19,7 @@ npm run dev                  # http://localhost:3000
 - **Descargar PDF** (archivo real, con tu logo) y **Compartir PDF** desde el móvil (WhatsApp, correo…), además de la vista previa / imprimir. Generador en `lib/pdf.ts`.
 - PDF/Imprimir con diseño de marca (presupuesto con firma de aceptación, factura con datos de pago), y envío por WhatsApp / email.
 - Recordatorios de pago por email o WhatsApp (abren tu app de correo/WhatsApp con el texto preparado y guardan la fecha del último recordatorio). No se envían desde un servidor.
+- **Aceptación por enlace**: en un presupuesto, "Crear enlace de aceptación" genera un enlace secreto; el cliente lo abre en su móvil (sin cuenta), ve el presupuesto y pulsa Aceptar o Rechazar. El estado se actualiza solo en todos tus dispositivos, con aviso en la app, nombre, fecha y comentario del cliente. El enlace también va en el PDF y en los mensajes de WhatsApp/email. Se puede desactivar en cualquier momento. Necesita que la app esté publicada en internet (define `NEXT_PUBLIC_APP_URL`). Detalles de seguridad en `supabase/migrations/20261107_quote_acceptance_links.sql`.
 - Presupuesto aceptado → "Crear factura" (banner en el presupuesto y en Inicio); la factura copia conceptos, IVA y cliente y queda enlazada.
 - Asistente de voz: dictado del navegador (es-ES) + Claude (`app/api/assistant`) que convierte la orden en acciones.
   Sin `ANTHROPIC_API_KEY` solo entiende órdenes simples ("abre facturas", "nuevo cliente Ana").

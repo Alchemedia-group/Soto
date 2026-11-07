@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "./Icon";
 import { Voice } from "./Voice";
 import { useStore } from "@/lib/store";
-import { startSync, useSync } from "@/lib/sync";
+import { dismissNotice, startSync, useSync } from "@/lib/sync";
 import { LoginScreen } from "./AuthGate";
 import { initTheme } from "@/lib/theme";
 
@@ -55,7 +55,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </Link>
     ));
   const sync = useSync();
-  useEffect(() => { startSync(); initTheme(); }, []);
+  const isPublic = path.startsWith("/aceptar"); // client-facing page: no login, no app chrome
+  useEffect(() => { if (!isPublic) startSync(); initTheme(); }, [isPublic]);
+  if (isPublic) return <>{children}</>;
   if (sync.enabled && !sync.ready) return null; // checking session
   if (sync.enabled && !sync.signedIn) return <LoginScreen />;
   const syncLabel =
@@ -74,6 +76,17 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <div className="muted" style={{ fontSize: ".75rem", padding: "1rem .7rem 0" }}>{syncLabel}</div>
       </aside>
       <main className="main">{children}</main>
+      {sync.notices.length > 0 && (
+        <div className="notices" role="status">
+          {sync.notices.map((n) => (
+            <div key={n.id} className="notice">
+              <span>{n.text}</span>
+              <Link className="btn sm" href={`/documentos/${n.docId}`} onClick={() => dismissNotice(n.id)}>Ver</Link>
+              <button className="btn sm" aria-label="Cerrar aviso" onClick={() => dismissNotice(n.id)}>×</button>
+            </div>
+          ))}
+        </div>
+      )}
       <nav className="tabbar">{mk(NAV.filter((n) => n.phone), true)}</nav>
       <Voice />
     </div>
